@@ -1,0 +1,12 @@
+buckets:
+  raw-web-html:
+    description: Raw HTML pages
+
+  raw-documents:
+    description: Raw PDFs and CSVs
+
+  raw-json:
+    description: Raw API JSON
+
+  raw-logs:
+    description: Pipeline logs

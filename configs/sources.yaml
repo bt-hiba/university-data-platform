@@ -1,0 +1,21 @@
+openalex:
+  source_system: "openalex"
+  base_url: "https://api.openalex.org"
+  endpoint: "/works"
+
+  request:
+    method: "GET"
+    timeout_seconds: 30
+    max_retries: 3
+    retry_backoff_seconds: 2
+
+  pagination:
+    enabled: true
+    page_param: "page"
+    per_page_param: "per-page"
+    per_page: 100
+    max_pages: 5
+
+  query_params:
+    filter: "type:journal-article"
+    sort: "publication_date:desc"

@@ -197,7 +197,82 @@ raw-web-html/source=nom/year=YYYY/month=MM/day=DD/
 
 Intégrati
 
+📦 Étape 4 – File Ingestion (Pipeline d’ingestion des fichiers)
+🎯 Objectif
 
+L’étape 4 constitue le point d’entrée des données dans le Data Lake.
+Elle permet l’ingestion automatique des fichiers locaux (CSV, JSON, PDF) vers MinIO (Raw Zone) après traitement.
+
+🔁 Vue globale du pipeline
+Fichiers (CSV / JSON / PDF)
+        ↓
+Lecture des données
+        ↓
+Génération de métadonnées
+        ↓
+Logging des opérations
+        ↓
+Calcul du hash
+        ↓
+Upload vers MinIO
+⚙️ Fonctionnement général
+
+Le pipeline d’ingestion est responsable de :
+
+détecter le type de fichier
+lire et extraire son contenu
+générer des métadonnées (type, taille, timestamp, hash)
+enregistrer les événements via logging
+assurer l’intégrité des fichiers avec un hash
+transférer les fichiers vers MinIO
+📂 Types de fichiers supportés
+CSV : données tabulaires structurées
+JSON : données semi-structurées
+PDF : extraction de texte brut
+🧾 Métadonnées
+
+Chaque fichier ingéré est enrichi automatiquement avec :
+
+nom du fichier
+type de source
+taille
+hash de contenu
+date et heure d’ingestion
+
+🎯 Elles assurent la traçabilité, le suivi et la détection de doublons.
+
+🪵 Logging
+
+Toutes les étapes du pipeline sont journalisées :
+
+début d’ingestion
+succès de lecture
+génération des métadonnées
+upload vers MinIO
+gestion des erreurs
+
+🎯 Objectif : assurer la transparence et faciliter le débogage.
+
+☁️ Stockage MinIO (Raw Zone)
+
+Les fichiers sont stockés dans MinIO selon une structure organisée :
+
+classification par type (CSV, JSON, PDF)
+organisation temporelle (année/mois/jour)
+
+🎯 Cela permet une gestion efficace du Data Lake et une meilleure exploitation des données.
+
+🧪 Résultat attendu
+
+À l’exécution du pipeline :
+
+les fichiers sont correctement ingérés
+les métadonnées sont générées
+les logs sont enregistrés
+les fichiers sont stockés dans MinIO
+✅ Conclusion
+
+L’étape 4 assure une ingestion fiable, traçable et structurée des données vers le Data Lake, constituant une base solide pour les étapes de traitement et d’analyse ultérieures.
 
 🚀 Étape 5 : Logs, Hash et Timestamps — Utils
 Cette étape consiste à développer les utilitaires communs utilisés par les différents modules d’ingestion du projet.

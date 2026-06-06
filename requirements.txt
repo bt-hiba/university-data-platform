@@ -3,3 +3,4 @@ minio
 python-dotenv
 loguru
 pyyaml
+pymupdf

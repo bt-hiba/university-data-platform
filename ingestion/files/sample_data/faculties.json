@@ -1,0 +1,12 @@
+[
+  {
+    "faculty_id": 1,
+    "faculty_name": "FSAC",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 2,
+    "faculty_name": "FST",
+    "city": "Mohammedia"
+  }
+]

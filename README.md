@@ -40,6 +40,104 @@ base d’un pipeline d’ingestion de données
 
 
 
+🚀 Étape 2 : API Ingestion — OpenAlex
+
+Cette étape consiste à développer le module d’ingestion de données depuis des APIs externes, avec OpenAlex comme première source de données académiques.
+
+✔️ 1. Configuration des sources API
+
+Création du fichier `configs/sources.yaml` permettant de centraliser la configuration des APIs :
+
+* URL de base ;
+* endpoints ;
+* timeout ;
+* nombre maximal de tentatives (retries) ;
+* paramètres de pagination.
+
+✔️ 2. Connecteur API générique
+
+Développement du module `ingestion/api/api_connector.py` :
+
+* chargement automatique de la configuration depuis `sources.yaml` ;
+* exécution des requêtes HTTP GET avec la bibliothèque `requests` ;
+* gestion des timeouts ;
+* gestion des erreurs réseau ;
+* mécanisme de retry automatique ;
+* prise en charge de la pagination.
+
+✔️ 3. Connecteur OpenAlex
+
+Développement du module `ingestion/api/openalex_connector.py` :
+
+* connexion à l’API OpenAlex ;
+* récupération des publications scientifiques ;
+* normalisation des données retournées ;
+* exposition de la méthode `fetch_publications()`.
+
+✔️ 4. Pipeline d’ingestion API
+
+Développement du module `ingestion/api/api_ingestor.py` :
+
+* récupération des données depuis OpenAlex ;
+* sauvegarde locale des données brutes au format JSON ;
+* calcul d’empreintes SHA-256 pour la traçabilité ;
+* génération automatique des métadonnées ;
+* upload des fichiers JSON vers MinIO ;
+* création automatique des partitions de stockage.
+
+Structure de stockage utilisée :
+
+raw-json/source=openalex/year=YYYY/month=MM/day=DD/
+
+✔️ 5. Métadonnées d’ingestion
+
+Génération automatique des métadonnées suivantes :
+
+* source_system ;
+* source_url ;
+* ingestion_timestamp ;
+* content_hash ;
+* record_count ;
+* status.
+
+✔️ 6. Journalisation et gestion des erreurs
+
+Intégration du système de logs commun du projet :
+
+* journalisation des opérations d’ingestion ;
+* suivi des erreurs HTTP ;
+* gestion des erreurs de connexion ;
+* gestion des timeouts ;
+* journalisation des tentatives de retry ;
+* suivi des opérations de stockage.
+
+✔️ 7. Tests
+
+Création du fichier `tests/test_ingestion.py` permettant de valider :
+
+* la génération des hashes SHA-256 ;
+* la création des chemins partitionnés ;
+* la génération des métadonnées ;
+* la sauvegarde locale des fichiers JSON ;
+* l’upload vers MinIO ;
+* le pipeline complet d’ingestion OpenAlex.
+
+Contribution d'intégration :
+Création et configuration du fichier .env contenant les paramètres de connexion MinIO
+nécessaires à l'exécution et aux tests du pipeline d'ingestion.
+
+🎯 Résultat
+
+Un module d’ingestion API robuste permettant :
+
+* de collecter automatiquement des données académiques depuis OpenAlex ;
+* de stocker les données brutes dans une architecture partitionnée ;
+* d’assurer la traçabilité grâce aux métadonnées et aux empreintes SHA-256 ;
+* d’intégrer les données au Data Lake via MinIO ;
+* de disposer d’un pipeline d’ingestion extensible pour d’autres APIs futures.
+
+
+
 
 
 

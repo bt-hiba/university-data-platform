@@ -2,3 +2,4 @@ requests
 minio
 python-dotenv
 loguru
+pyyaml

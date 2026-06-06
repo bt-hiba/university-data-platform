@@ -19,3 +19,7 @@ openalex:
   query_params:
     filter: "type:journal-article"
     sort: "publication_date:desc"
+#Malika: Web Scraping
+universities:
+  - name: um5
+    url: https://www.um5.ac.ma

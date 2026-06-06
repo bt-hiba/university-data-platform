@@ -139,7 +139,63 @@ Un module d’ingestion API robuste permettant :
 
 
 
+🚀 Étape 3 : Web Scraping — Pages HTML universitaires
 
+Cette étape consiste à développer le module de scraping web pour collecter 
+les pages HTML des universités, avec gestion des erreurs, traçabilité et 
+stockage dans le Data Lake.
+
+✔️ 1. Configuration des sources web
+
+Ajout de la section `universities` dans `configs/sources.yaml` permettant 
+de centraliser la liste des universités à scraper :
+
+* nom de la source ;
+* URL de la page principale.
+
+✔️ 2. Pipeline de scraping web
+
+Développement du module `ingestion/web/scraper_requests.py` :
+
+* lecture automatique de la liste des universités depuis `sources.yaml` ;
+* téléchargement des pages HTML avec la bibliothèque `requests` ;
+* gestion des timeouts ;
+* gestion des erreurs réseau et HTTP ;
+* mécanisme de retry automatique (3 tentatives) ;
+* en-têtes HTTP simulant un navigateur réel.
+
+✔️ 3. Traçabilité et intégrité
+
+* calcul d'empreintes SHA-256 sur le contenu HTML brut ;
+* horodatage ISO 8601 de chaque ingestion ;
+* sauvegarde locale organisée par date.
+
+✔️ 4. Métadonnées d'ingestion
+
+Génération automatique des métadonnées suivantes :
+
+* source_name ;
+* source_type ;
+* url ;
+* ingested_at ;
+* pipeline ;
+* hash_sha256 ;
+* hash_algorithm ;
+* local_path ;
+* minio_bucket ;
+* minio_object.
+
+✔️ 5. Stockage dans MinIO
+
+Upload automatique des fichiers HTML vers le bucket `raw-web-html` :
+
+Structure de stockage utilisée :
+
+raw-web-html/source=nom/year=YYYY/month=MM/day=DD/
+
+✔️ 6. Journalisation et gestion des erreurs
+
+Intégrati
 
 
 

@@ -13,13 +13,24 @@ openalex:
     enabled: true
     page_param: "page"
     per_page_param: "per-page"
-    per_page: 100
-    max_pages: 5
+    per_page: 50
+    max_pages: 2
 
   query_params:
-    filter: "type:journal-article"
+    filter: "institutions.country_code:ma,type:article"
     sort: "publication_date:desc"
-#Malika: Web Scraping
-universities:
-  - name: um5
-    url: https://www.um5.ac.ma
+
+# ─── SPA API Overrides (tier 2 du crawler) ───────────────────────────────────
+# Lorsque le crawler détecte qu'un domaine sert une Single Page Application,
+# il consulte cette table avant de tomber sur Playwright. Si une (ou plusieurs)
+# entrée existe pour le domaine, le crawler appelle ces endpoints en JSON et
+# stocke la réponse dans raw-json/source=<source_name>/...
+#
+# Exemple (à adapter quand on découvre les APIs réelles d'une SPA) :
+# spa_api_overrides:
+#   example-university.ma:
+#     - name: courses
+#       url: https://example-university.ma/api/courses
+#     - name: departments
+#       url: https://example-university.ma/api/departments
+spa_api_overrides: {}

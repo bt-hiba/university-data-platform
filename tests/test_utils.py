@@ -73,7 +73,8 @@ log_metadata(log, {
 
 # Vérifier que le fichier de log a été créé
 parts = get_date_parts()
-log_path = os.path.join("raw_data", "logs", parts["year"], parts["month"], parts["day"], "integration_test.log")
+base_log_dir = os.getenv("INGESTION_LOG_DIR", "logs")
+log_path = os.path.join(base_log_dir, parts["year"], parts["month"], parts["day"], "integration_test.log")
 assert os.path.exists(log_path), f"Fichier de log non créé : {log_path}"
 print(f"  ✅ Fichier de log créé : {log_path}")
 

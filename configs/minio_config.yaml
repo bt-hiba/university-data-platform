@@ -1,12 +1,9 @@
 buckets:
-  raw-web-html:
-    description: Raw HTML pages
-
+  raw-html:
+    description: Raw HTML pages collected by the web crawler
   raw-documents:
-    description: Raw PDFs and CSVs
-
+    description: Raw binary documents (PDF, DOC, DOCX, ...)
   raw-json:
-    description: Raw API JSON
-
+    description: Raw JSON payloads from APIs and JSON file ingestion
   raw-logs:
-    description: Pipeline logs
+    description: Per-object metadata records and pipeline run summaries

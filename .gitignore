@@ -4,3 +4,12 @@ venv/
 raw_data/
 *.log
 test.txt
+
+# Airflow runtime
+airflow/logs/
+airflow/scheduler/
+airflow/airflow.db
+
+# OS
+.DS_Store
+Thumbs.db

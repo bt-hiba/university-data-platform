@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ingestion.api.openalex_connector import OpenAlexConnector
-from storage.minio_client import upload_file
+from storage.minio_client import upload_file, upload_json
 from utils.hash_utils import compute_hash_from_text
 from utils.logger import (
     log_ingestion_error,
@@ -16,6 +16,8 @@ from utils.logger import (
 
 
 log = setup_logger("api_ingestor")
+
+LOGS_BUCKET = "raw-logs"
 
 
 class APIIngestor:
@@ -87,6 +89,13 @@ class APIIngestor:
                 file_path=str(raw_file_path)
             )
 
+            # Métadonnées publiées dans le bucket raw-logs (traçabilité)
+            metadata_object_name = self._build_minio_object_name(
+                partition_path=partition_path,
+                file_name=metadata_file_path.name
+            )
+            upload_json(LOGS_BUCKET, metadata_object_name, metadata)
+
             size_bytes = raw_file_path.stat().st_size
 
             log_ingestion_success(
@@ -121,7 +130,7 @@ class APIIngestor:
         day = ingestion_timestamp.strftime("%d")
 
         return Path(
-            f"raw-json/source={self.source_name}/year={year}/month={month}/day={day}"
+            f"source={self.source_name}/year={year}/month={month}/day={day}"
         )
 
     def _save_raw_payload(
@@ -186,8 +195,13 @@ class APIIngestor:
         return str(partition_path / file_name).replace("\\", "/")
 
 
+def run_api_ingestion() -> Dict[str, Any]:
+    """Point d'entrée utilisé par le DAG Airflow."""
+    ingestor = APIIngestor(bucket_name="raw-json")
+    return ingestor.ingest_publications()
+
+
 if __name__ == "__main__":
-    ingestor = APIIngestor(bucket_name="university-data-platform")
-    result_metadata = ingestor.ingest_publications()
+    result_metadata = run_api_ingestion()
 
     print(json.dumps(result_metadata, indent=2))

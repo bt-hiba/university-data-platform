@@ -1,10 +1,16 @@
-from typing import Any, Dict, List
+import os
+from typing import Any, Dict, List, Optional
 
 from ingestion.api.api_connector import APIConnector
 from utils.logger import setup_logger
 
 
 log = setup_logger("openalex_connector")
+
+_PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..")
+)
+_DEFAULT_CONFIG_PATH = os.path.join(_PROJECT_ROOT, "configs", "sources.yaml")
 
 
 class OpenAlexConnector:
@@ -14,12 +20,12 @@ class OpenAlexConnector:
 
     def __init__(
         self,
-        config_path: str = "configs/sources.yaml",
+        config_path: Optional[str] = None,
         source_name: str = "openalex"
     ):
         self.source_name = source_name
         self.api_connector = APIConnector(
-            config_path=config_path,
+            config_path=config_path or _DEFAULT_CONFIG_PATH,
             source_name=source_name
         )
 

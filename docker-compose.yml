@@ -1,3 +1,4 @@
+version: '3.9'
 # ─────────────────────────────────────────────────────────────────────────────
 # University Data Platform — Week 1 infrastructure
 # Services: postgres, redis, airflow-init, airflow-webserver, airflow-scheduler,
@@ -42,6 +43,7 @@ x-airflow-common: &airflow-common
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/config:/opt/airflow/config
+    - ./spark:/opt/airflow/project/spark
     # On monte le code Python du projet pour que les DAGs puissent importer
     # ingestion/, storage/, utils/, configs/ comme modules.
     - ./ingestion:/opt/airflow/project/ingestion
@@ -55,6 +57,7 @@ x-airflow-common: &airflow-common
       condition: service_healthy
     redis:
       condition: service_healthy
+
 
 services:
 
@@ -159,6 +162,42 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  spark-master:
+    image: apache/spark:3.5.1
+    container_name: spark-master
+
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+
+    environment:
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+
+    ports:
+      - "8081:8080"
+      - "7077:7077"
+
+    volumes:
+      - ./spark:/opt/spark-apps
+
+    restart: always
+
+  spark-worker:
+    image: apache/spark:3.5.1
+    container_name: spark-worker
+
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+
+    depends_on:
+      - spark-master
+
+    volumes:
+      - ./spark:/opt/spark-apps
+
+    restart: always
 
 volumes:
   postgres-data:

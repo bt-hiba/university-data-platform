@@ -4,3 +4,13 @@ python-dotenv
 loguru
 pyyaml
 pymupdf
+<<<<<<< Updated upstream
+=======
+beautifulsoup4
+lxml
+playwright
+pyspark==3.5.1
+findspark
+boto3
+python-dotenv
+>>>>>>> Stashed changes

@@ -1,4 +1,65 @@
+<<<<<<< Updated upstream
 version: '3.9'
+=======
+# ─────────────────────────────────────────────────────────────────────────────
+# University Data Platform — Week 1 infrastructure
+# Services: postgres, redis, airflow-init, airflow-webserver, airflow-scheduler,
+#           airflow-worker, minio
+# Volumes : postgres-data, redis-data, minio-data
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-airflow-common: &airflow-common
+  build:
+    context: ./airflow
+    dockerfile: Dockerfile
+  image: university-data-platform/airflow:2.10.4-playwright
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-university-data-platform-secret}
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # Les dépendances Python (requests, minio, beautifulsoup4, playwright, …)
+    # sont préinstallées dans l'image custom — voir airflow/Dockerfile.
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    # Variables d'ingestion exposées aux DAGs
+    MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+    MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+    MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    MINIO_SECURE: ${MINIO_SECURE}
+    CRAWLER_ROOT_URL: ${CRAWLER_ROOT_URL}
+    CRAWLER_SOURCE_NAME: ${CRAWLER_SOURCE_NAME}
+    CRAWLER_MAX_DEPTH: ${CRAWLER_MAX_DEPTH}
+    CRAWLER_MAX_PAGES: ${CRAWLER_MAX_PAGES}
+    CRAWLER_REQUEST_TIMEOUT: ${CRAWLER_REQUEST_TIMEOUT}
+    CRAWLER_ENABLE_PLAYWRIGHT: ${CRAWLER_ENABLE_PLAYWRIGHT:-true}
+    PYTHONPATH: /opt/airflow/project
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./airflow/config:/opt/airflow/config
+    - ./spark:/opt/airflow/project/spark
+    # On monte le code Python du projet pour que les DAGs puissent importer
+    # ingestion/, storage/, utils/, configs/ comme modules.
+    - ./ingestion:/opt/airflow/project/ingestion
+    - ./storage:/opt/airflow/project/storage
+    - ./utils:/opt/airflow/project/utils
+    - ./configs:/opt/airflow/project/configs
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
+  depends_on:
+    &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+>>>>>>> Stashed changes
 
 services:
 
@@ -18,6 +79,42 @@ services:
 
     volumes:
       - minio_data:/data
+
+  spark-master:
+    image: apache/spark:3.5.1
+    container_name: spark-master
+
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+
+    environment:
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+
+    ports:
+      - "8081:8080"
+      - "7077:7077"
+
+    volumes:
+      - ./spark:/opt/spark-apps
+
+    restart: always
+
+  spark-worker:
+    image: apache/spark:3.5.1
+    container_name: spark-worker
+
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+
+    depends_on:
+      - spark-master
+
+    volumes:
+      - ./spark:/opt/spark-apps
+
+    restart: always
 
 volumes:
   minio_data:

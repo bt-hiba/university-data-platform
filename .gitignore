@@ -4,3 +4,8 @@ venv/
 raw_data/
 *.log
 test.txt
+# Spark jars
+spark/jars/
+
+# Airflow logs
+airflow/logs/

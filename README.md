@@ -474,3 +474,6 @@ Un ensemble d’utilitaires réutilisables permettant :
 * de calculer des empreintes pour la traçabilité et la déduplication ;
 * de journaliser les opérations du pipeline de manière fiable.
 
+
+#Pour le test de spark:
+ docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 --conf spark.executor.extraClassPath=/opt/spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar --conf spark.driver.extraClassPath=/opt/spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar /opt/spark-apps/test_connection.py

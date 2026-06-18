@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-version: '3.9'
-=======
->>>>>>> 3bce505 (Update Spark infrastructure setup)
 # ─────────────────────────────────────────────────────────────────────────────
 # University Data Platform — Week 1 infrastructure
 # Services: postgres, redis, airflow-init, airflow-webserver, airflow-scheduler,
@@ -79,16 +75,11 @@ services:
       interval: 10s
       retries: 5
       start_period: 5s
-<<<<<<< HEAD
-    restart: always
-
-=======
 
     networks:
       - university-network      
     restart: always
 
->>>>>>> 3bce505 (Update Spark infrastructure setup)
   redis:
     image: redis:7-alpine
     container_name: university-redis
@@ -96,12 +87,9 @@ services:
       - 6379
     volumes:
       - redis-data:/data
-<<<<<<< HEAD
-=======
 
     networks:
       - university-network
->>>>>>> 3bce505 (Update Spark infrastructure setup)
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -127,11 +115,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-<<<<<<< HEAD
-=======
     networks:
       - university-network  
->>>>>>> 3bce505 (Update Spark infrastructure setup)
     restart: always
 
   airflow-init:
@@ -160,11 +145,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-<<<<<<< HEAD
-=======
     networks:
       - university-network  
->>>>>>> 3bce505 (Update Spark infrastructure setup)
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -175,11 +157,8 @@ services:
     <<: *airflow-common
     container_name: university-airflow-scheduler
     command: scheduler
-<<<<<<< HEAD
-=======
     networks:
       - university-network    
->>>>>>> 3bce505 (Update Spark infrastructure setup)
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -190,11 +169,8 @@ services:
     <<: *airflow-common
     container_name: university-airflow-worker
     command: celery worker
-<<<<<<< HEAD
-=======
     networks:
       - university-network    
->>>>>>> 3bce505 (Update Spark infrastructure setup)
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -248,12 +224,8 @@ services:
 volumes:
   postgres-data:
   redis-data:
-<<<<<<< HEAD
-  minio-data:
-=======
   minio-data:
 
 networks:
   university-network:
     driver: bridge  
->>>>>>> 3bce505 (Update Spark infrastructure setup)

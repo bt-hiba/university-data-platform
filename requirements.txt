@@ -10,4 +10,7 @@ playwright
 pyspark==3.5.1
 findspark
 boto3
+<<<<<<< HEAD
 python-dotenv
+=======
+>>>>>>> 3bce505 (Update Spark infrastructure setup)

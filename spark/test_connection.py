@@ -1,9 +1,11 @@
-from spark.spark_session import create_spark_session
+try:
+    from spark.spark_session import create_spark_session
+except ModuleNotFoundError:
+    from spark_session import create_spark_session
 
 spark = create_spark_session()
 
-print("Spark Version")
-
+print("Spark Version:")
 print(spark.version)
 
 data = [
@@ -16,4 +18,8 @@ df = spark.createDataFrame(
     ["name", "department"]
 )
 
+print("Rows:", df.count())
+
 df.show()
+
+spark.stop()

@@ -1,9 +1,162 @@
 # University Data Platform
 
 ## Description
-Projet de plateforme de données universitaires basé sur ingestion, transformation et stockage.
+Plateforme d'ingestion de données universitaires construite autour d'une **Raw Zone** immuable (MinIO) et orchestrée par **Apache Airflow**. La Semaine 1 livre un pipeline d'ingestion quotidien couvrant trois sources : web (crawler récursif), API (OpenAlex) et fichiers locaux (CSV/JSON/PDF).
 
-## Description des étapes réalisées durant la première semaine
+## Architecture (Semaine 1)
+
+```
+                   ┌─────────────────────────────────────┐
+                   │   Airflow (Webserver / Scheduler /  │
+                   │            Worker Celery)           │
+                   └────────────────┬────────────────────┘
+                                    │  DAG : daily_ingestion
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+  crawl_website                collect_api                collect_files
+  (BFS récursif)               (OpenAlex)                 (CSV/JSON/PDF)
+        │                           │                           │
+        └─────────────┬─────────────┴─────────────┬─────────────┘
+                      ▼                           ▼
+              ┌───────────────┐           ┌───────────────┐
+              │  raw-html     │           │ raw-json      │
+              │  raw-documents│           │ raw-logs      │
+              └───────────────┘           └───────────────┘
+                          MinIO (Raw Zone)
+```
+
+Conteneurs définis dans `docker-compose.yml` :
+- `postgres` (métadonnées Airflow)
+- `redis` (broker Celery)
+- `minio` (stockage S3-compatible, console sur :9001)
+- `airflow-init` (création de l'utilisateur admin)
+- `airflow-webserver` (UI sur :8080)
+- `airflow-scheduler`
+- `airflow-worker`
+
+## Prérequis
+- Docker Desktop ≥ 24.x (WSL2 sous Windows)
+- 4 GB RAM disponibles pour la stack
+- Ports libres : `5432`, `6379`, `8080`, `9000`, `9001`
+
+## Démo end-to-end (Semaine 1)
+
+### 1. Démarrer la stack
+```powershell
+docker compose up -d
+```
+La première initialisation prend 3–5 min (init DB Airflow + install des `_PIP_ADDITIONAL_REQUIREMENTS`). Vérifier que tout est `healthy` :
+```powershell
+docker compose ps
+```
+
+### 2. Accéder aux UIs
+| Service        | URL                       | Credentials             |
+|----------------|---------------------------|-------------------------|
+| Airflow        | http://localhost:8080     | `admin` / `admin`       |
+| MinIO console  | http://localhost:9001     | `minioadmin` / `minioadmin` |
+
+### 3. Déclencher le DAG
+Depuis l'UI Airflow : activer le toggle du DAG `daily_ingestion` puis cliquer sur *Trigger DAG*.
+Ou en CLI :
+```powershell
+docker compose exec airflow-scheduler airflow dags unpause daily_ingestion
+docker compose exec airflow-scheduler airflow dags trigger daily_ingestion
+```
+
+Pipeline exécuté :
+```
+start → ensure_buckets → [crawl_website | collect_api | collect_files] → save_metadata → finish
+```
+
+### 4. Vérifier les artefacts dans MinIO
+```powershell
+docker compose exec minio mc alias set local http://localhost:9000 minioadmin minioadmin
+docker compose exec minio mc ls --recursive local/raw-html
+docker compose exec minio mc ls --recursive local/raw-json
+docker compose exec minio mc ls --recursive local/raw-documents
+docker compose exec minio mc ls --recursive local/raw-logs
+```
+
+Structure attendue :
+```
+raw-html/source=<src>/year=YYYY/month=MM/day=DD/1.html
+raw-html/source=<src>/year=YYYY/month=MM/day=DD/1-1.html
+raw-html/source=<src>/year=YYYY/month=MM/day=DD/1-1-2.html
+raw-documents/source=<src>/.../1-3-2.pdf
+raw-json/source=openalex/.../page_1.json
+raw-logs/source=<src>/.../metadata_<node_id>.json
+raw-logs/source=pipeline/.../run_summary_<run_id>.json
+```
+
+## Convention de nommage `node_id`
+
+Le crawler attribue un identifiant hiérarchique générique à chaque page/document découvert :
+- Racine : `1`
+- Enfants de `1` : `1.1`, `1.2`, `1.3`…
+- Petits-enfants de `1.1` : `1.1.1`, `1.1.2`…
+
+Le `node_id` est utilisé comme nom de fichier (avec `-` au lieu de `.`) :
+- `1.html`, `1-1.html`, `1-1-2.pdf`
+
+Chaque objet possède un **sidecar JSON** dans `raw-logs` contenant : `node_id`, `parent_id`, `depth`, `source_url`, `content_hash` (SHA-256), `crawl_timestamp`, `http_status`.
+
+## Configuration (`.env`)
+
+| Variable | Défaut | Rôle |
+|----------|--------|------|
+| `CRAWLER_ROOT_URL`        | `https://fsac.ac.ma` | URL racine du crawl |
+| `CRAWLER_SOURCE_NAME`     | `fsac`               | Nom de partition dans MinIO |
+| `CRAWLER_MAX_DEPTH`       | `3`                  | Profondeur maximale BFS |
+| `CRAWLER_MAX_PAGES`       | `30`                 | Plafond de pages crawlées |
+| `CRAWLER_REQUEST_TIMEOUT` | `30`                 | Timeout HTTP (s) |
+| `MINIO_ENDPOINT`          | `minio:9000`         | Endpoint interne (containers) |
+| `MINIO_ENDPOINT_LOCAL`    | `localhost:9000`     | Endpoint hôte (tests locaux) |
+
+Toute modification du `.env` nécessite un redémarrage :
+```powershell
+docker compose up -d --force-recreate airflow-worker airflow-scheduler
+```
+
+## Filtre OpenAlex
+Configuré dans `configs/sources.yaml` :
+```yaml
+query_params:
+  filter: "institutions.country_code:ma,type:article"
+  sort:   "publication_date:desc"
+pagination:
+  per_page: 50
+  max_pages: 2
+```
+→ Publications d'institutions marocaines, 2 pages × 50 résultats.
+
+## Fichiers locaux d'exemple
+`ingestion/files/sample_data/` contient un échantillon générique (`courses.csv`, `faculties.json`, `guide.pdf`) ingéré vers `raw-documents` / `raw-json` à chaque run.
+
+## Tests
+```powershell
+python -m pytest tests/ -v
+```
+
+## Limitation connue — `fsac.ac.ma`
+La cible par défaut (`fsac.ac.ma`) est une **Single Page Application** : les liens du menu (`annonces.html`, `events.html`, `tabs.html?page=formations`) sont gérés en JavaScript côté client et renvoient `404` côté serveur. Le crawler les **découvre correctement** (voir logs : `node=1.1 url=…/annonces.html`) mais ne peut pas les télécharger.
+
+Pour valider visuellement l'arborescence multi-niveaux dans MinIO, changer temporairement la racine dans `.env` :
+```env
+CRAWLER_ROOT_URL=https://www.python.org
+CRAWLER_SOURCE_NAME=pythonorg_demo
+```
+puis relancer le DAG. Résultat attendu : `1.html`, `1-1.html`, …, `1-14.html` dans `raw-html/source=pythonorg_demo/…`.
+
+## Arrêt
+```powershell
+docker compose down            # garde les volumes (MinIO + Postgres)
+docker compose down -v         # supprime aussi les données
+```
+
+---
+
+## Historique des étapes Semaine 1
 
 🚀 Étape 1 : Mise en place de MinIO et test d’ingestion
 Cette étape consiste à mettre en place un stockage local avec MinIO et à valider l’upload de fichiers via Python.

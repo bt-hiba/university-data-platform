@@ -61,47 +61,41 @@ def setup_logger(component: str = "pipeline") -> None:
     )
 
     # ── Handler 2 : Fichier de log ────────────────────────────────────────────
-    # On construit le chemin du fichier de log avec la date du jour.
-    # Exemple : raw_data/logs/2026/06/05/api_ingestor.log
+    # Base configurable via la variable d'env INGESTION_LOG_DIR.
+    # - En local         : ./logs/YYYY/MM/DD/<component>.log
+    # - Dans Airflow     : /opt/airflow/logs/ingestion/YYYY/MM/DD/<component>.log
+    # On écrit en parallèle des logs Airflow natifs (qui restent gérés par
+    # Airflow lui-même via stdout) pour conserver une trace dédiée au pipeline.
     date_parts = get_date_parts()
+    base_log_dir = os.getenv("INGESTION_LOG_DIR", "logs")
     log_dir = os.path.join(
-        "raw_data", "logs",
+        base_log_dir,
         date_parts["year"],
         date_parts["month"],
-        date_parts["day"]
+        date_parts["day"],
     )
 
-    # Créer le dossier si il n'existe pas encore
-    # exist_ok=True : pas d'erreur si le dossier existe déjà
-    os.makedirs(log_dir, exist_ok=True)
-
-    log_file = os.path.join(log_dir, f"{component}.log")
-
-    logger.add(
-        log_file,
-
-        # Dans le fichier, on veut TOUT (même les DEBUG)
-        level="DEBUG",
-
-        # Format plus complet pour le fichier (sans couleurs)
-        format=(
-            "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
-            "{level: <8} | "
-            "{extra[component]: <15} | "
-            "{name}:{function}:{line} | "
-            "{message}"
-        ),
-
-        # Rotation : quand le fichier dépasse 10 MB, créer un nouveau fichier.
-        # Cela évite d'avoir un seul énorme fichier de log ingérable.
-        rotation="10 MB",
-
-        # Rétention : garder les logs 7 jours, puis les supprimer automatiquement.
-        retention="7 days",
-
-        # Encodage UTF-8 pour supporter les caractères spéciaux (accents, arabe...)
-        encoding="utf-8",
-    )
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, f"{component}.log")
+        logger.add(
+            log_file,
+            level="DEBUG",
+            format=(
+                "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
+                "{level: <8} | "
+                "{extra[component]: <15} | "
+                "{name}:{function}:{line} | "
+                "{message}"
+            ),
+            rotation="10 MB",
+            retention="7 days",
+            encoding="utf-8",
+        )
+    except (OSError, PermissionError):
+        # Si l'écriture sur disque est impossible (FS read-only, perms),
+        # on ne casse pas le pipeline : on continue en console seulement.
+        pass
 
     # On "lie" le composant au logger pour qu'il apparaisse dans chaque message.
     # bind() crée une copie du logger avec des informations contextuelles fixes.

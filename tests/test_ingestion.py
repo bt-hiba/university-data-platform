@@ -55,7 +55,7 @@ def test_build_partition_path_uses_source_and_date():
     partition_path = ingestor._build_partition_path(ingestion_timestamp)
 
     assert partition_path == Path(
-        "raw-json/source=openalex/year=2026/month=06/day=06"
+        "source=openalex/year=2026/month=06/day=06"
     )
 
 
@@ -99,7 +99,7 @@ def test_build_minio_object_name_uses_forward_slashes():
         connector=mock_connector
     )
 
-    partition_path = Path("raw-json/source=openalex/year=2026/month=06/day=06")
+    partition_path = Path("source=openalex/year=2026/month=06/day=06")
 
     object_name = ingestor._build_minio_object_name(
         partition_path=partition_path,
@@ -107,7 +107,7 @@ def test_build_minio_object_name_uses_forward_slashes():
     )
 
     assert object_name == (
-        "raw-json/source=openalex/year=2026/month=06/day=06/"
+        "source=openalex/year=2026/month=06/day=06/"
         "openalex_publications.json"
     )
 
@@ -172,9 +172,11 @@ def test_save_raw_payload_and_metadata_creates_json_files(tmp_path):
     assert saved_metadata["status"] == "success"
 
 
+@patch("ingestion.api.api_ingestor.upload_json")
 @patch("ingestion.api.api_ingestor.upload_file")
 def test_ingest_publications_fetches_saves_metadata_and_uploads(
     mock_upload_file,
+    mock_upload_json,
     tmp_path
 ):
     mock_connector = MagicMock()
@@ -209,11 +211,117 @@ def test_ingest_publications_fetches_saves_metadata_and_uploads(
 
     mock_connector.fetch_publications.assert_called_once()
     mock_upload_file.assert_called_once()
+    mock_upload_json.assert_called_once()
 
     upload_call_kwargs = mock_upload_file.call_args.kwargs
 
     assert upload_call_kwargs["bucket_name"] == "test-bucket"
     assert upload_call_kwargs["object_name"].startswith(
-        "raw-json/source=openalex/year="
+        "source=openalex/year="
     )
     assert upload_call_kwargs["object_name"].endswith(".json")
+
+    metadata_call_args = mock_upload_json.call_args.args
+    assert metadata_call_args[0] == "raw-logs"
+
+
+
+# ─── SPA detection (tier 3 fallback) ─────────────────────────────────────────
+
+from ingestion.web.spa_detector import detect_domain, is_spa
+
+
+_STATIC_HTML = """
+<html><body>
+  <h1>Faculté des Sciences</h1>
+  <p>Bienvenue sur le site officiel. Cette page présente nos formations,
+     notre actualité et nos coordonnées de contact.</p>
+  <ul>
+    <li><a href="/formations">Formations</a></li>
+    <li><a href="/recherche">Recherche</a></li>
+    <li><a href="/contact">Contact</a></li>
+    <li><a href="/annonces">Annonces</a></li>
+  </ul>
+</body></html>
+""" * 3
+
+
+_SPA_HEAD = """
+<!doctype html><html lang="fr"><head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="University SPA" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/static/css/main.abc123.css" />
+  <title>University Portal</title>
+</head>
+""".strip()
+
+
+_SPA_HTML_ROOT = _SPA_HEAD + """
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <script src="/static/js/runtime.abc.js"></script>
+  <script src="/static/js/vendor.def.js"></script>
+  <script src="/static/js/main.abc123.js"></script>
+</body></html>
+"""
+
+
+_SPA_HTML_APP = _SPA_HEAD + """
+<body>
+  <noscript>This site requires JavaScript.</noscript>
+  <div id="app"></div>
+  <script src="/static/js/vendor.js"></script>
+  <script src="/static/js/app.js"></script>
+</body></html>
+"""
+
+
+def test_is_spa_returns_false_for_static_html():
+    spa, reason = is_spa(_STATIC_HTML)
+    assert spa is False
+    assert reason.startswith("static_ok")
+
+
+def test_is_spa_detects_react_root():
+    spa, reason = is_spa(_SPA_HTML_ROOT)
+    assert spa is True
+    assert "root" in reason
+
+
+def test_is_spa_detects_vue_app():
+    spa, reason = is_spa(_SPA_HTML_APP)
+    assert spa is True
+    assert "app" in reason
+
+
+def test_is_spa_handles_empty_html():
+    spa, reason = is_spa("")
+    assert spa is True
+    assert reason == "html_too_short"
+
+
+def test_detect_domain_extracts_netloc():
+    assert detect_domain("https://fsac.ac.ma/page.html") == "fsac.ac.ma"
+    assert detect_domain("http://example.org") == "example.org"
+    assert detect_domain("not-a-url") == ""
+
+
+def test_build_node_metadata_includes_render_mode():
+    from ingestion.web.metadata_builder import build_node_metadata
+
+    meta = build_node_metadata(
+        node_id="1",
+        parent_id=None,
+        depth=1,
+        source_url="https://x.test",
+        content_hash="a" * 64,
+        bucket="raw-html",
+        object_path="source=x/year=2026/month=01/day=01/1.html",
+        render_mode="playwright",
+    )
+    assert meta["render_mode"] == "playwright"
+    assert meta["node_id"] == "1"

@@ -1,6 +1,4 @@
-<<<<<<< Updated upstream
 version: '3.9'
-=======
 # ─────────────────────────────────────────────────────────────────────────────
 # University Data Platform — Week 1 infrastructure
 # Services: postgres, redis, airflow-init, airflow-webserver, airflow-scheduler,
@@ -59,26 +57,111 @@ x-airflow-common: &airflow-common
       condition: service_healthy
     redis:
       condition: service_healthy
->>>>>>> Stashed changes
+
 
 services:
 
-  minio:
-    image: minio/minio
-    container_name: university-minio
+  postgres:
+    image: postgres:15
+    container_name: university-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
 
+  redis:
+    image: redis:7-alpine
+    container_name: university-redis
+    expose:
+      - 6379
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    restart: always
+
+  minio:
+    image: minio/minio:latest
+    container_name: university-minio
     ports:
       - "9000:9000"
       - "9001:9001"
-
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
-
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     command: server /data --console-address ":9001"
-
     volumes:
-      - minio_data:/data
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: university-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin --password admin \
+          --firstname Admin --lastname User \
+          --role Admin --email admin@example.com || true
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: university-airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: university-airflow-scheduler
+    command: scheduler
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker:
+    <<: *airflow-common
+    container_name: university-airflow-worker
+    command: celery worker
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
 
   spark-master:
     image: apache/spark:3.5.1
@@ -117,4 +200,6 @@ services:
     restart: always
 
 volumes:
-  minio_data:
+  postgres-data:
+  redis-data:
+  minio-data:

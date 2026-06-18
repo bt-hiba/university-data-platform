@@ -9,3 +9,12 @@ spark/jars/
 
 # Airflow logs
 airflow/logs/
+
+# Airflow runtime
+airflow/logs/
+airflow/scheduler/
+airflow/airflow.db
+
+# OS
+.DS_Store
+Thumbs.db

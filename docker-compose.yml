@@ -131,6 +131,8 @@ services:
           --username admin --password admin \
           --firstname Admin --lastname User \
           --role Admin --email admin@example.com || true
+    networks:
+      - university-network
     restart: "no"
 
   airflow-webserver:

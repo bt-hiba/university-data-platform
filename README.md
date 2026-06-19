@@ -477,3 +477,243 @@ Un ensemble d’utilitaires réutilisables permettant :
 
 #Pour le test de spark:
  docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 --conf spark.executor.extraClassPath=/opt/spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar --conf spark.driver.extraClassPath=/opt/spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar /opt/spark-apps/test_connection.py
+
+ Analyse le projet university-data-platform et mets à jour le README pour refléter l’état actuel du projet après les ajouts de la Semaine 2.
+
+Contexte général :
+Le projet est une plateforme de données universitaires basée sur :
+- Airflow pour l’orchestration
+- MinIO pour la Raw Zone
+- Docker Compose pour l’infrastructure
+- Spark pour la transformation et la lecture des données brutes avant Hudi
+
+Ce qui était déjà fait en Semaine 1 :
+- Pipeline Airflow daily_ingestion fonctionnel
+- Ingestion web via crawler
+- Ingestion API OpenAlex
+- Ingestion fichiers CSV / JSON / PDF
+- Stockage dans MinIO avec buckets :
+  - raw-html
+  - raw-json
+  - raw-documents
+  - raw-logs
+- Génération de métadonnées
+- Logs, timestamps, hashes SHA-256
+- Tests unitaires pour ingestion et utils
+
+Ce qui a été ajouté / corrigé récemment :
+
+1. Ajout de Spark dans Docker Compose
+Deux services Spark sont maintenant définis :
+- spark-master
+- spark-worker
+
+Le master expose :
+- Spark UI : http://localhost:8081
+- Spark master URL : spark://spark-master:7077
+
+Les services Spark utilisent l’image :
+- apache/spark:3.5.1
+
+Commandes configurées :
+- spark-master lance :
+  /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+
+- spark-worker lance :
+  /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+
+Les deux services sont connectés au réseau :
+- university-network
+
+2. Ajout des JARs nécessaires pour lire MinIO avec Spark S3A
+Les JARs sont dans :
+- spark/jars/hadoop-aws-3.3.4.jar
+- spark/jars/aws-java-sdk-bundle-1.12.262.jar
+
+Important :
+On ne monte pas tout le dossier spark/jars vers /opt/spark/jars, car cela écrase les JARs internes de Spark.
+On monte les deux JARs fichier par fichier :
+- ./spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+- ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+
+3. Création / stabilisation de spark_session.py
+Le fichier spark/spark_session.py crée une SparkSession compatible avec :
+- Spark master Docker : spark://spark-master:7077
+- MinIO via S3A : minio:9000
+- credentials MinIO : minioadmin / minioadmin
+
+Le fichier utilise les variables .env quand elles existent :
+- SPARK_MASTER
+- MINIO_ENDPOINT
+- MINIO_ACCESS_KEY
+- MINIO_SECRET_KEY
+
+Il contient aussi des valeurs par défaut pour fonctionner dans les conteneurs Docker.
+
+4. Test de connexion Spark
+Le fichier spark/test_connection.py permet de tester que Spark master et worker fonctionnent.
+
+Commande :
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/test_connection.py
+
+Résultat attendu :
+Spark Version:
+3.5.1
+Rows: 2
+
+Et affichage d’un DataFrame avec :
+- Ahmed / CS
+- Fatima / Math
+
+Validation obtenue :
+- Spark master fonctionne
+- Spark worker fonctionne
+- Le worker est enregistré dans le master
+- Spark UI affiche Status: ALIVE
+- Spark UI affiche Alive Workers: 1
+- Un job PySpark s’exécute correctement sur le cluster
+
+5. Ajout du test de lecture MinIO avant Hudi
+Nouveau fichier :
+- spark/read_minio.py
+
+Objectif :
+Tester que Spark peut lire les données brutes depuis MinIO avant de passer à Hudi.
+
+Par défaut, il lit :
+s3a://raw-json/
+
+Il lit en format text par défaut, car le bucket raw-json contient plusieurs fichiers JSON bruts avec des structures différentes. Une lecture directe en JSON peut échouer à cause de conflits de colonnes Spark.
+
+Commande :
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/read_minio.py
+
+Résultat obtenu :
+Reading MinIO path: s3a://raw-json/
+Format: text
+Rows: 213792
+
+Cela valide :
+- Spark arrive à se connecter à MinIO
+- Spark arrive à lire depuis s3a://raw-json/
+- Les JARs S3A fonctionnent
+- Le worker exécute les tâches Spark
+
+Option avancée :
+Pour tester un chemin précis :
+docker exec -e READ_MINIO_PATH=s3a://raw-json/source=openalex/ spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/read_minio.py
+
+Pour forcer une lecture JSON :
+docker exec -e READ_MINIO_FORMAT=json spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/read_minio.py
+
+6. Correction Airflow init
+Problème rencontré :
+Airflow UI répondait avec ERR_EMPTY_RESPONSE sur http://localhost:8080.
+
+Cause :
+Le service airflow-init n’était pas connecté au réseau university-network, donc il ne pouvait pas résoudre le host postgres. La base metadata Airflow n’était donc pas initialisée.
+
+Correction dans docker-compose.yml :
+Ajouter à airflow-init :
+networks:
+  - university-network
+
+Après correction :
+docker compose up airflow-init
+docker compose up -d airflow-webserver airflow-scheduler airflow-worker
+
+Résultat :
+- Airflow webserver healthy
+- Airflow scheduler healthy
+- Metadata database healthy
+- http://localhost:8080 répond 200
+- Login : admin / admin
+
+7. Correction MinIO non démarré
+Problème rencontré dans Airflow :
+La tâche ensure_buckets échouait ou restait en retry.
+
+Cause :
+MinIO n’était pas lancé.
+
+Correction :
+docker compose up -d minio
+
+Vérification :
+docker ps --filter "name=minio"
+
+Résultat attendu :
+university-minio Up ... healthy
+
+Après démarrage MinIO :
+- ensure_buckets passe en success
+- crawl_website passe en success
+- collect_api passe en success
+- collect_files passe en success
+- save_metadata passe en success
+- finish passe en success
+- Le DAG daily_ingestion manuel passe en success
+
+8. Commande recommandée pour démarrer toute l’infrastructure
+Ajouter dans le README :
+
+docker compose up -d postgres redis minio airflow-webserver airflow-scheduler airflow-worker spark-master spark-worker
+
+Puis vérifier :
+docker ps
+
+URLs :
+- Airflow : http://localhost:8080
+- Spark Master UI : http://localhost:8081
+- MinIO Console : http://localhost:9001
+
+Credentials :
+- Airflow : admin / admin
+- MinIO : minioadmin / minioadmin
+
+9. Commandes de diagnostic utiles
+Airflow :
+docker logs --tail 80 university-airflow-webserver
+docker logs --tail 80 university-airflow-scheduler
+docker logs --tail 80 university-airflow-worker
+
+MinIO :
+docker logs --tail 80 university-minio
+
+Spark :
+docker logs --tail 80 spark-master
+docker logs --tail 80 spark-worker
+
+Vérifier Spark :
+docker ps --filter "name=spark"
+
+Relancer Spark :
+docker compose up -d spark-master spark-worker
+
+10. État actuel avant Hudi
+Le projet est prêt pour l’étape suivante Hudi parce que :
+- Airflow fonctionne
+- MinIO fonctionne
+- Les buckets raw existent
+- Le DAG daily_ingestion fonctionne
+- Spark master et worker fonctionnent
+- Spark lit MinIO via s3a://
+- Le test read_minio.py valide la lecture de raw-json
+- Les fichiers Hudi futurs existent déjà comme placeholders :
+  - spark/hudi_writer.py
+  - spark/quality_checks.py
+  - spark/transform_faculty_profiles.py
+  - spark/transform_course_catalog.py
+
+Prochaine étape recommandée :
+Implémenter l’écriture Hudi dans spark/hudi_writer.py, puis construire les transformations :
+- faculty_profiles
+- course_catalog
+
+Mettre à jour le README avec une section “Semaine 2 - Spark + MinIO validation” contenant :
+- architecture Spark
+- commandes de démarrage
+- commandes de test Spark
+- commandes de test lecture MinIO
+- problèmes rencontrés et corrections
+- état validé avant Hudi

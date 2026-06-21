@@ -1,52 +1,19 @@
-from pyspark.sql import SparkSession
 import os
+from pyspark.sql import SparkSession
 
-try:
-    from dotenv import load_dotenv
-except ModuleNotFoundError:
-    load_dotenv = None
+def create_spark_session(app_name="UniversityDataPlatform"):
 
-if load_dotenv:
-    load_dotenv()
-
-
-def create_spark_session():
     spark_master = os.getenv("SPARK_MASTER", "spark://spark-master:7077")
-    minio_endpoint = os.getenv("MINIO_ENDPOINT", "minio:9000")
-    minio_access_key = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-    minio_secret_key = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+    minio_endpoint = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
+    access_key = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+    secret_key = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 
-    spark = (
-        SparkSession.builder
-        .appName("UniversityDataPlatform")
-        .master(spark_master)
-
-        .config(
-            "spark.hadoop.fs.s3a.endpoint",
-            minio_endpoint
-        )
-
-        .config(
-            "spark.hadoop.fs.s3a.access.key",
-            minio_access_key
-        )
-
-        .config(
-            "spark.hadoop.fs.s3a.secret.key",
-            minio_secret_key
-        )
-
-        .config(
-            "spark.hadoop.fs.s3a.path.style.access",
-            "true"
-        )
-
-        .config(
-            "spark.hadoop.fs.s3a.connection.ssl.enabled",
-            "false"
-        )
-
+    return SparkSession.builder \
+        .appName(app_name) \
+        .master(spark_master) \
+        .config("spark.hadoop.fs.s3a.endpoint", minio_endpoint) \
+        .config("spark.hadoop.fs.s3a.access.key", access_key) \
+        .config("spark.hadoop.fs.s3a.secret.key", secret_key) \
+        .config("spark.hadoop.fs.s3a.path.style.access", "true") \
+        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
         .getOrCreate()
-    )
-
-    return spark

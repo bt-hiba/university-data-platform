@@ -1,4 +1,9 @@
-course_id,course_name,faculty
-1,Database,FSAC
-2,Machine Learning,FSAC
-3,Java Programming,FSAC
+course_id,course_name,faculty,program,credits,language,semester
+C001,Database Systems,FSAC,Computer Science,6,FR,S5
+C002,Machine Learning,FSAC,Computer Science,6,EN,S6
+C003,Java Programming,FSAC,Computer Science,5,FR,S4
+C004,Big Data Analytics,FSAC,Big Data & Cloud Computing,6,EN,S5
+C005,Cloud Computing,FSAC,Big Data & Cloud Computing,6,EN,S6
+C006,Artificial Intelligence,FSAC,Computer Science,6,EN,S6
+C007,Operating Systems,FSAC,Computer Science,5,FR,S3
+C008,Computer Networks,FSAC,Computer Science,5,FR,S4

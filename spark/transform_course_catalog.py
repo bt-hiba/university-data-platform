@@ -11,6 +11,7 @@ from quality_checks import (
     validate_course_schema
 )
 
+from hudi_writer import write_hudi
 
 
 if __name__ == "__main__":
@@ -61,10 +62,13 @@ if __name__ == "__main__":
     print("===== AFTER QUALITY =====")
     print(df_final.count())
     # WRITE
-    df_final.write.mode("overwrite").parquet(
-        "s3a://curated/course_catalog/"
+    write_hudi(
+        df=df_final,
+        table_name="course_catalog",
+        record_key="course_id",
+        path="s3a://curated/course_catalog"
     )
-    print("✓ Written to s3a://curated/course_catalog/")
+    
     df.printSchema()
     df.show()
     spark.stop()

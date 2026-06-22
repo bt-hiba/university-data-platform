@@ -1,4 +1,4 @@
-from pyspark.sql import SparkSession
+from spark_session import create_spark_session
 from pyspark.sql.functions import (
     col, lit, current_timestamp, levenshtein, row_number,
     lower, trim, regexp_replace, length, broadcast 
@@ -14,22 +14,17 @@ from quality_checks import (
     validate_faculty_schema
 )
 
+from hudi_writer import write_hudi
 
 
-spark = SparkSession.builder \
-    .appName("UniversityDataPlatform") \
-    .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000") \
-    .config("spark.hadoop.fs.s3a.access.key", "minioadmin") \
-    .config("spark.hadoop.fs.s3a.secret.key", "minioadmin") \
-    .config("spark.hadoop.fs.s3a.path.style.access", "true") \
-    .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
-    .config("spark.hadoop.fs.s3a.aws.credentials.provider",
-            "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
-    .getOrCreate()
+
+spark = create_spark_session(
+    "faculty_profiles_transform"
+)
 
 spark.sparkContext.setLogLevel("WARN")
 
-OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=20/openalex_publications_20260620T120138Z_be959a0a5742.json"
+OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=21/openalex_publications_20260621T000007Z_838ae9c604dc.json"
 FACULTIES_PATH = "s3a://raw-json/source=local_files/year=2026/month=06/day=20/faculties.json"
 
 # ----------------------------
@@ -149,13 +144,20 @@ if authors_df is not None and authors_df.count() > 0:
         print(final_df.count())
 
         final_df = remove_duplicates(final_df)
-
+        
         final_df = remove_null_faculty(final_df)
 
         validate_faculty_schema(final_df)
 
         print("===== AFTER QUALITY =====")
         print(final_df.count())
+
+        write_hudi(
+            df=final_df,
+            table_name="faculty_profiles",
+            record_key="faculty_id",
+            path="s3a://curated/faculty_profiles"
+        )
     else:
         print("No fuzzy matches found!")
 else:

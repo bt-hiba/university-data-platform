@@ -1,12 +1,20 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col, lit, current_timestamp, levenshtein, row_number,
-    lower, trim, regexp_replace, length, broadcast
+    lower, trim, regexp_replace, length, broadcast 
 )
-from pyspark.sql.types import StructType, StructField, StringType, LongType
+from pyspark.sql.types import StructType, StructField, StringType, LongType 
 from pyspark.sql.window import Window
 from pyspark.sql.functions import asc
-import json
+import json 
+
+from quality_checks import (
+    remove_duplicates,
+    remove_null_faculty,
+    validate_faculty_schema
+)
+
+
 
 spark = SparkSession.builder \
     .appName("UniversityDataPlatform") \
@@ -21,7 +29,7 @@ spark = SparkSession.builder \
 
 spark.sparkContext.setLogLevel("WARN")
 
-OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=20/openalex_publications_20260620T152120Z_be959a0a5742.json"
+OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=20/openalex_publications_20260620T120138Z_be959a0a5742.json"
 FACULTIES_PATH = "s3a://raw-json/source=local_files/year=2026/month=06/day=20/faculties.json"
 
 # ----------------------------
@@ -137,7 +145,19 @@ if authors_df is not None and authors_df.count() > 0:
         print("\n=== FINAL RESULT ===")
         print(f"Final: {final_df.count()} records")
         final_df.show(truncate=False)
+        print("===== BEFORE QUALITY =====")
+        print(final_df.count())
+
+        final_df = remove_duplicates(final_df)
+
+        final_df = remove_null_faculty(final_df)
+
+        validate_faculty_schema(final_df)
+
+        print("===== AFTER QUALITY =====")
+        print(final_df.count())
     else:
         print("No fuzzy matches found!")
 else:
     print("Could not process data")
+

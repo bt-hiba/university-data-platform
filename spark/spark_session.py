@@ -11,6 +11,12 @@ def create_spark_session(app_name="UniversityDataPlatform"):
     return SparkSession.builder \
         .appName(app_name) \
         .master(spark_master) \
+        .config("spark.serializer",
+                "org.apache.spark.serializer.KryoSerializer") \
+        .config("spark.sql.extensions",
+                "org.apache.spark.sql.hudi.HoodieSparkSessionExtension") \
+        .config("spark.sql.catalog.spark_catalog",
+                "org.apache.spark.sql.hudi.catalog.HoodieCatalog") \
         .config("spark.hadoop.fs.s3a.endpoint", minio_endpoint) \
         .config("spark.hadoop.fs.s3a.access.key", access_key) \
         .config("spark.hadoop.fs.s3a.secret.key", secret_key) \

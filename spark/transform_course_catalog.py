@@ -5,10 +5,20 @@ sys.path.append("/opt/spark-apps")
 
 from spark_session import create_spark_session
 
+from quality_checks import (
+    remove_duplicates,
+    remove_null_courses,
+    validate_course_schema
+)
+
+from hudi_writer import write_hudi
+
 
 if __name__ == "__main__":
 
     spark = create_spark_session("course_catalog_transform")
+    
+    
 
     # READ CSV FROM MINIO
     df = spark.read.option("header", True).csv(
@@ -37,12 +47,28 @@ if __name__ == "__main__":
         F.current_timestamp()
     )
 
+    
     df_final.show(truncate=False)
 
+    print("===== BEFORE QUALITY =====")
+    print(df_final.count())
+
+    df_final = remove_duplicates(df_final)
+
+    df_final = remove_null_courses(df_final)
+
+    validate_course_schema(df_final)
+
+    print("===== AFTER QUALITY =====")
+    print(df_final.count())
     # WRITE
-    df_final.write.mode("overwrite").parquet(
-        "s3a://curated/course_catalog/"
+    write_hudi(
+        df=df_final,
+        table_name="course_catalog",
+        record_key="course_id",
+        path="s3a://curated/course_catalog"
     )
+    
     df.printSchema()
     df.show()
     spark.stop()

@@ -22,5 +22,8 @@ def create_spark_session(app_name="UniversityDataPlatform"):
         .config("spark.hadoop.fs.s3a.secret.key", secret_key) \
         .config("spark.hadoop.fs.s3a.path.style.access", "true") \
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+        .config("hive.metastore.uris", "thrift://hive-metastore:9083") \
+        .config("spark.sql.catalogImplementation", "hive") \
+        .config("spark.sql.warehouse.dir", "s3a://curated/hive-warehouse") \
         .enableHiveSupport() \
         .getOrCreate()

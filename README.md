@@ -717,3 +717,68 @@ Mettre à jour le README avec une section “Semaine 2 - Spark + MinIO validatio
 - commandes de test lecture MinIO
 - problèmes rencontrés et corrections
 - état validé avant Hudi
+
+
+
+## les testes a faire pour l'enregistrement des tables hudi dans hive 
+docker compose down 
+docker compose up -d 
+
+1. Exécuter les transformations
+
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/transform_faculty_profiles.py
+
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/transform_course_catalog.py
+
+2. Enregistrer les tables Hudi dans Hive
+
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark-apps/register_hudi_tables.py
+
+3. Vérifier que les tables sont bien présentes dans Hive
+
+docker compose exec spark-master /bin/sh -lc '
+cat > /tmp/show_tables.sql << "SQL"
+SHOW TABLES;
+SQL
+/opt/spark/bin/spark-sql \
+  --master spark://spark-master:7077 \
+  --conf spark.hadoop.hive.metastore.uris=thrift://hive-metastore:9083 \
+  --conf spark.sql.catalogImplementation=hive \
+  --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
+  --conf spark.hadoop.fs.s3a.access.key=minioadmin \
+  --conf spark.hadoop.fs.s3a.secret.key=minioadmin \
+  --conf spark.hadoop.fs.s3a.path.style.access=true \
+  --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+  -f /tmp/show_tables.sql'
+
+4. Vérifier que les tables ne sont pas vides
+
+docker compose exec spark-master /bin/sh -lc '
+cat > /tmp/check_counts.sql << "SQL"
+SELECT COUNT(*) AS cnt_from_faculty_profiles FROM faculty_profiles;
+SELECT COUNT(*) AS cnt_from_course_catalog FROM course_catalog;
+SQL
+/opt/spark/bin/spark-sql \
+  --master spark://spark-master:7077 \
+  --conf spark.hadoop.hive.metastore.uris=thrift://hive-metastore:9083 \
+  --conf spark.sql.catalogImplementation=hive \
+  --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
+  --conf spark.hadoop.fs.s3a.access.key=minioadmin \
+  --conf spark.hadoop.fs.s3a.secret.key=minioadmin \
+  --conf spark.hadoop.fs.s3a.path.style.access=true \
+  --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+  -f /tmp/check_counts.sql'
+
+5. Vérification alternative via Spark
+
+docker compose exec spark-master /bin/sh -lc '
+cd /opt/spark-apps && \
+SPARK_MASTER=local[1] \
+MINIO_ENDPOINT=http://minio:9000 \
+MINIO_ACCESS_KEY=minioadmin \
+MINIO_SECRET_KEY=minioadmin \
+/opt/spark/bin/spark-submit --master local[1] spark/test_hudi_read.py'
+
+# Résultat attendu :
+Les tables faculty_profiles et course_catalog apparaissent dans SHOW TABLES
+Les comptages doivent retourner des valeurs non nulles, par exemple 2 pour faculty_profiles et 3 pour course_catalog

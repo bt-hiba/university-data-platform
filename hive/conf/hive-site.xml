@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+  <!-- PostgreSQL Metastore -->
   <property>
     <name>javax.jdo.option.ConnectionURL</name>
     <value>jdbc:postgresql://postgres:5432/hive_metastore</value>
@@ -21,9 +22,10 @@
     <value>hive</value>
   </property>
 
+  <!-- Warehouse sur S3 (pas local) -->
   <property>
     <name>hive.metastore.warehouse.dir</name>
-    <value>/tmp/hive/warehouse</value>
+    <value>s3a://curated/hive-warehouse</value>
   </property>
 
   <property>
@@ -41,6 +43,44 @@
     <value>0.0.0.0</value>
   </property>
 
+  <!-- S3A (CRITIQUE - manquant) -->
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>http://minio:9000</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>minioadmin</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>minioadmin</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.impl</name>
+    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>false</value>
+  </property>
+
+  <!-- Hudi Input Format -->
+  <property>
+    <name>hive.input.format</name>
+    <value>org.apache.hudi.hadoop.hive.HoodieCombineHiveInputFormat</value>
+  </property>
+
+  <!-- Autres -->
   <property>
     <name>datanucleus.autoCreateSchema</name>
     <value>false</value>
@@ -59,6 +99,27 @@
   <property>
     <name>datanucleus.connectionPoolingType</name>
     <value>dbcp</value>
+  </property>
+
+  <!-- HiveServer2 scratch directory permissions -->
+  <property>
+    <name>hive.exec.scratchdir</name>
+    <value>/tmp/hive</value>
+  </property>
+
+  <property>
+    <name>hive.scratch.dir.permission</name>
+    <value>777</value>
+  </property>
+
+  <property>
+    <name>hive.server2.enable.doAs</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>hive.notification.event.poll.interval</name>
+    <value>0s</value>
   </property>
 
 </configuration>

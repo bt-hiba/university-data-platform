@@ -81,6 +81,30 @@ services:
       - university-network      
     restart: always
 
+  hive-metastore-db-init:
+    image: postgres:15
+    container_name: hive-metastore-db-init
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -e
+        until pg_isready -h postgres -U ${POSTGRES_USER}; do
+          sleep 2
+        done
+        psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -tc "SELECT 1 FROM pg_roles WHERE rolname='hive'" | grep -q 1 || psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "CREATE USER hive WITH PASSWORD 'hive';"
+        psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -tc "SELECT 1 FROM pg_database WHERE datname='hive_metastore'" | grep -q 1 || psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "CREATE DATABASE hive_metastore OWNER hive;"
+        psql -h postgres -U ${POSTGRES_USER} -d hive_metastore -c "ALTER SCHEMA public OWNER TO hive;"
+        echo "Hive metastore database ready"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - university-network
+    restart: "no"
+
   redis:
     image: redis:7-alpine
     container_name: university-redis
@@ -229,6 +253,13 @@ services:
   hive-server:
     image: apache/hive:4.0.0
     container_name: hive-server
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /tmp/hive
+        chmod -R 777 /tmp/hive
+        exec /entrypoint.sh
 
     environment:
       SERVICE_NAME: hiveserver2
@@ -236,19 +267,27 @@ services:
       DB_DRIVER: postgres
       SKIP_SCHEMA_INIT: "true"
       HADOOP_CLIENT_OPTS: "-Xmx2G"
+      # JARs auxiliaires pour Hudi + S3A
+      HIVE_AUX_JARS_PATH: "/opt/hive/auxlib/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/hive/auxlib/hadoop-aws-3.3.4.jar:/opt/hive/auxlib/aws-java-sdk-bundle-1.12.262.jar"
 
     ports:
       - "10000:10000"
 
     depends_on:
-      - hive-metastore
+      hive-metastore:
+        condition: service_healthy
 
     volumes:
       - ./spark/jars/postgresql-42.7.3.jar:/opt/hive/lib/postgresql-42.7.3.jar
       - ./hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+      # JARs Hudi + S3A pour Hive-Server
+      - ./spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/hive/auxlib/hudi-spark3.5-bundle_2.12-0.15.0.jar
+      - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/hive/auxlib/hadoop-aws-3.3.4.jar
+      - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/hive/auxlib/aws-java-sdk-bundle-1.12.262.jar
 
     healthcheck:
-      test: ["CMD", "bash", "-c", "curl -f http://localhost:10000 || exit 1"]
+      # CORRIGÉ : utiliser beeline au lieu de curl
+      test: ["CMD", "/opt/hive/bin/beeline", "-u", "jdbc:hive2://localhost:10000", "-e", "show databases;", "--silent=true"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -256,6 +295,7 @@ services:
 
     networks:
       - university-network
+    restart: always
 
   hive-metastore-init:
     image: apache/hive:4.0.0
@@ -272,11 +312,13 @@ services:
       -c "/opt/hive/bin/schematool -dbType postgres -initOrUpgradeSchema --verbose && echo DONE"
 
     depends_on: 
-      postgres:
-        condition: service_healthy
+      hive-metastore-db-init:
+        condition: service_completed_successfully
     volumes:
       - ./spark/jars/postgresql-42.7.3.jar:/opt/hive/lib/postgresql-42.7.3.jar
       - ./hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/hive/auxlib/hadoop-aws-3.3.4.jar
+      - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/hive/auxlib/aws-java-sdk-bundle-1.12.262.jar
     networks:
       - university-network
     restart: "no"
@@ -292,9 +334,8 @@ services:
       HIVE_METASTORE_JDBC_USER: hive
       HIVE_METASTORE_JDBC_PASS: hive
       HADOOP_CLIENT_OPTS: "-Xmx2G"
+      HIVE_AUX_JARS_PATH: "/opt/hive/auxlib/hadoop-aws-3.3.4.jar:/opt/hive/auxlib/aws-java-sdk-bundle-1.12.262.jar"
     depends_on:
-      postgres:
-        condition: service_healthy
       hive-metastore-init:
         condition: service_completed_successfully
     ports:
@@ -302,8 +343,10 @@ services:
     volumes:
       - ./spark/jars/postgresql-42.7.3.jar:/opt/hive/lib/postgresql-42.7.3.jar
       - ./hive/conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/hive/auxlib/hadoop-aws-3.3.4.jar
+      - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/hive/auxlib/aws-java-sdk-bundle-1.12.262.jar
     healthcheck:
-      test: ["CMD", "echo", "select 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9083'"]
       interval: 30s
       timeout: 10s
       retries: 5

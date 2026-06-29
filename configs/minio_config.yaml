@@ -7,3 +7,5 @@ buckets:
     description: Raw JSON payloads from APIs and JSON file ingestion
   raw-logs:
     description: Per-object metadata records and pipeline run summaries
+  curated:
+    description: Curated Hudi tables and Hive warehouse

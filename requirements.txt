@@ -10,3 +10,4 @@ playwright
 pyspark==3.5.1
 findspark
 boto3
+elasticsearch==8.15.1

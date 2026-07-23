@@ -275,10 +275,6 @@ Création du fichier `tests/test_ingestion.py` permettant de valider :
 * l’upload vers MinIO ;
 * le pipeline complet d’ingestion OpenAlex.
 
-Contribution d'intégration :
-Création et configuration du fichier .env contenant les paramètres de connexion MinIO
-nécessaires à l'exécution et aux tests du pipeline d'ingestion.
-
 🎯 Résultat
 
 Un module d’ingestion API robuste permettant :

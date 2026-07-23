@@ -22,12 +22,12 @@ if __name__ == "__main__":
 
     # READ CSV FROM MINIO
     df = spark.read.option("header", True).csv(
-    "s3a://raw-documents/source=local_files/year=2026/month=06/day=20/courses.csv"
+    "s3a://raw-documents/source=local_files/year=2026/month=06/day=17/courses.csv"
     )
 
     # CLEAN
     df_clean = df.select(
-        F.col("course_id").cast("int"),
+        F.col("course_id").cast("string"),
         F.col("course_name"),
         F.col("faculty")
     )

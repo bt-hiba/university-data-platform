@@ -851,3 +851,23 @@ Faculty Search ✅
 Course Search ✅
 Global Search ✅
 Current Status
+
+## 🔍 Module API & Search Service (FastAPI & Elasticsearch)
+
+### 📝 Description du composant
+Cette partie du projet consiste à concevoir et déployer une **API REST sous FastAPI** servant de couche d'interrogation pour le moteur de recherche **Elasticsearch**. Elle permet d'exécuter des requêtes de recherche textuelle et multicritères sur les données universitaires stockées dans les index Elasticsearch.
+
+### ⚙️ Fonctionnalités clés développées
+* **Routes de Recherche Dédiées :**
+  * `GET /search/faculty` : Recherche ciblée sur les profils des enseignants (`faculty_profiles`).
+  * `GET /search/course` : Recherche ciblée dans le catalogue de cours (`course_catalog`).
+  * `GET /search/all` : Route de recherche globale (Global Search) exécutant une requête multi-index simultanée (`search_everything`).
+* **Validation & Sécurisation des données :** Définition des schémas Pydantic (`schemas.py`) pour la validation automatique des paramètres de requêtes et des formats de réponses JSON.
+* **Documentation Interactive OpenAPI :** Interface Swagger UI générée automatiquement et accessible sur `http://localhost:8000/docs`.
+* **Conteneurisation Docker :** Création du `Dockerfile` et intégration du service `api-server` dans la stack `docker-compose.yml`.
+
+### 🚀 Exécution & Test rapide
+
+1. **Lancer le service API :**
+   ```bash
+   docker compose up -d --build api-server

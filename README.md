@@ -778,3 +778,76 @@ MINIO_SECRET_KEY=minioadmin \
 # Résultat attendu :
 Les tables faculty_profiles et course_catalog apparaissent dans SHOW TABLES
 Les comptages doivent retourner des valeurs non nulles, par exemple 2 pour faculty_profiles et 3 pour course_catalog
+
+## Elasticsearch Integration
+
+### Overview
+This phase integrates **Elasticsearch** into the University Data Platform to provide fast full-text search over curated Hudi tables.
+
+### Implemented Features
+- Elasticsearch service added to Docker Compose
+- Automatic creation of search indices
+- Bulk indexing from Hudi tables
+- Search module for querying indexed data
+- Keyword search on faculty profiles and course catalog
+
+### Project Structure
+
+```text
+search/
+│
+├── __init__.py
+├── config.py
+├── elastic_client.py
+├── mappings.py
+├── create_indices.py
+├── readers.py
+├── bulk_indexer.py
+├── index_faculty.py
+├── index_courses.py
+├── search_queries.py
+├── utils.py
+├── test_connection.py
+└── test_search.py
+
+###Installed Packages
+
+pip install elasticsearch==8.15.0
+
+###Docker services added:
+
+Elasticsearch
+Kibana (optional)
+
+###Execution
+1. Start Elasticsearch
+docker compose up -d elasticsearch
+2. Verify Connection
+docker compose exec spark-master python3 /opt/search/test_connection.py
+3. Create Indices
+docker compose exec spark-master python3 /opt/search/create_indices.py
+4. Index Faculty Profiles
+docker compose exec spark-master python3 /opt/search/index_faculty.py
+5. Index Course Catalog
+docker compose exec spark-master python3 /opt/search/index_courses.py
+
+###Testing
+Verify Elasticsearch
+curl http://localhost:9200
+List Indices
+curl http://localhost:9200/_cat/indices?v
+Count Documents
+curl http://localhost:9200/faculty_profiles/_count
+curl http://localhost:9200/course_catalog/_count
+Display Indexed Documents
+curl http://localhost:9200/faculty_profiles/_search?pretty
+curl http://localhost:9200/course_catalog/_search?pretty
+Test Search Module
+docker compose exec spark-master python3 /opt/search/test_search.py
+
+###Expected output:
+
+Faculty Search ✅
+Course Search ✅
+Global Search ✅
+Current Status

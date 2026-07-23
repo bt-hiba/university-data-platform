@@ -49,13 +49,10 @@ class BulkIndexer:
         index_name: str,
         id_field: str,
     ) -> Generator[Dict[str, Any], None, None]:
-
         """
         Convert Spark DataFrame into Bulk API actions.
         """
-
-         for row in dataframe.toLocalIterator():
-
+        for row in dataframe.toLocalIterator():
             document = row.asDict(recursive=True)
 
             # DEBUG

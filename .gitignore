@@ -18,3 +18,7 @@ airflow/airflow.db
 # OS
 .DS_Store
 Thumbs.db
+
+# transform
+/spark/transform_course_catalog.py
+/spark/transform_faculty_profiles.py

@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # READ CSV FROM MINIO
     df = spark.read.option("header", True).csv(
-    "s3a://raw-documents/source=local_files/year=2026/month=06/day=20/courses.csv"
+    "s3a://raw-documents/source=local_files/year=2026/month=07/day=22/courses.csv"
     )
 
     # CLEAN

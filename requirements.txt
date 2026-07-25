@@ -10,3 +10,7 @@ playwright
 pyspark==3.5.1
 findspark
 boto3
+elasticsearch==8.15.1
+fastapi==0.115.0
+uvicorn==0.30.6
+pydantic==2.9.2

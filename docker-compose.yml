@@ -51,6 +51,7 @@ x-airflow-common: &airflow-common
     - ./storage:/opt/airflow/project/storage
     - ./utils:/opt/airflow/project/utils
     - ./configs:/opt/airflow/project/configs
+    - ./search:/opt/airflow/project/search
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
     &airflow-common-depends-on
@@ -205,15 +206,19 @@ services:
         condition: service_completed_successfully
 
   spark-master:
-    image: apache/spark:3.5.1
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
     container_name: spark-master
 
     command: >
       /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
 
     environment:
+      - PYTHONPATH=/opt:/opt/spark-apps:/opt/search
       - SPARK_MASTER_HOST=spark-master
       - SPARK_MASTER_PORT=7077
+      
 
     ports:
       - "8081:8080"
@@ -224,7 +229,7 @@ services:
       - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
       - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
       - ./spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar
-
+      - ./search:/opt/search
     networks:
       - university-network
     restart: always  
@@ -272,22 +277,27 @@ services:
     restart: unless-stopped
 
   spark-worker:
-    image: apache/spark:3.5.1
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
     container_name: spark-worker
 
     command: >
       /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
       spark://spark-master:7077
 
+    environment:
+      PYTHONPATH: /opt:/opt/spark-apps:/opt/search
+
     depends_on:
       - spark-master
-
+    
     volumes:
       - ./spark:/opt/spark-apps
       - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
       - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
       - ./spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar
-
+      - ./search:/opt/search
     networks:
       - university-network
     restart: always
@@ -441,12 +451,84 @@ services:
       retries: 5
       start_period: 90s
     restart: unless-stopped      
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: university-elasticsearch
+
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+
+    ports:
+      - "9200:9200"
+
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fs http://localhost:9200 >/dev/null || exit 1"
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+    restart: always
+
+    networks:
+      - university-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+
+    container_name: university-kibana
+
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+
+    ports:
+      - "5601:5601"
+
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+    restart: always
+
+    networks:
+      - university-network
+
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-server
+    command: uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - PYTHONPATH=/opt
+    volumes:
+      - .:/opt
+    networks:
+      - university-network
+    depends_on:
+      - elasticsearch
+
 
 volumes:
   postgres-data:
   redis-data:
   minio-data:
   metabase-data:
+  elasticsearch-data:
+  
 
 networks:
   university-network:

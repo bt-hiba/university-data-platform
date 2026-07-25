@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # CLEAN
     df_clean = df.select(
-        F.col("course_id").cast("int"),
+        F.col("course_id").cast("string"),
         F.col("course_name"),
         F.col("faculty")
     )

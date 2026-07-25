@@ -24,7 +24,7 @@ spark = create_spark_session(
 
 spark.sparkContext.setLogLevel("WARN")
 
-OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=23/openalex_publications_20260623T155004Z_cc07279bf2ca.json"
+OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=18/openalex_publications_20260618T234056Z_63842827966d.json"
 FACULTIES_PATH = "s3a://raw-json/source=local_files/year=2026/month=06/day=20/faculties.json"
 
 # ----------------------------

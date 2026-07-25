@@ -871,3 +871,18 @@ Cette partie du projet consiste à concevoir et déployer une **API REST sous Fa
 1. **Lancer le service API :**
    ```bash
    docker compose up -d --build api-server
+
+http://localhost:8000/docs
+
+docker compose exec spark-master python3 /opt/search/test_connection.py                  
+docker compose exec spark-master python3 /opt/search/create_indices.py                   
+docker compose exec spark-master /opt/spark/bin/spark-submit /opt/search/index_faculty.py
+docker compose exec spark-master /opt/spark/bin/spark-submit /opt/search/index_courses.py
+docker compose exec spark-master python3 /opt/search/test_search.py 
+curl http://localhost:9200/faculty_profiles/_count 
+curl http://localhost:9200/course_catalog/_count   
+curl http://localhost:9200/faculty_profiles/_search?pretty 
+curl http://localhost:9200/course_catalog/_search?pretty 
+curl http://localhost:9200/_cat/indices?v 
+
+http://localhost:8000/docs

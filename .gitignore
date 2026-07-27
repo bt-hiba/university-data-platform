@@ -20,5 +20,5 @@ airflow/airflow.db
 Thumbs.db
 
 # transform
-/spark/transform_course_catalog.py
-/spark/transform_faculty_profiles.py
+#/spark/transform_course_catalog.py
+#/spark/transform_faculty_profiles.py

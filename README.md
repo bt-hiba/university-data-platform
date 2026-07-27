@@ -886,3 +886,59 @@ curl http://localhost:9200/course_catalog/_search?pretty
 curl http://localhost:9200/_cat/indices?v 
 
 http://localhost:8000/docs
+
+
+
+
+##### 1. Arrêter Metabase
+docker compose down
+#####2. Supprimer l'ancien volume
+##Vérifie d'abord son nom :
+
+docker volume ls
+
+### Puis :
+docker volume rm university-data-platform_metabase-data
+
+#####3. Recréer le volume vide
+docker volume create university-data-platform_metabase-data
+#####4. Copier l'archive
+
+Place
+
+metabase-data.tar.gz
+
+##dans le dossier racine du projet (à côté du docker-compose.yml).
+
+#####5. Restaurer le volume
+docker run --rm `
+-v university-data-platform_metabase-data:/data `
+-v ${PWD}:/backup `
+busybox `
+tar xzf /backup/metabase-data.tar.gz -C /
+#####6. Relancer les conteneurs
+docker compose up -d
+#####7. Ouvrir Metabase
+http://localhost:3000
+
+
+###mnin tpulliw 
+docker compose down
+docker compose build airflow-init airflow-webserver airflow-scheduler airflow-worker      
+docker compose up -d 
+
+
+Flux du DAG
+start
+  └─▶️ ensure_buckets          (créer les buckets MinIO si absents)
+       └─▶️ crawl_website       (scraping du site université, Playwright si SPA)
+            └─▶️ collect_api     (ingestion OpenAlex → raw-json/source=openalex/...)
+                 └─▶️ collect_files  (ingestion fichiers locaux → raw-json/source=local_files/...)
+                      └─▶️ save_metadata  (récapitulatif du run → raw-logs)
+                           └─▶️ transform_faculty_profiles  (Spark, fuzzy match + écriture Hudi)
+                                └─▶️ transform_course_catalog  (Spark)
+                                     └─▶️ register_hudi_tables  (enregistrement Hive)
+                                          └─▶️ index_faculty     (indexation Elasticsearch)
+                                               └─▶️ index_courses  (indexation Elasticsearch)
+                                                    └─▶️ finish
+

@@ -153,8 +153,10 @@ class APIIngestor:
             f"openalex_publications_{timestamp_label}_{content_hash[:12]}_metadata.json"
         )
 
-        with open(raw_file_path, "w", encoding="utf-8") as raw_file:
+        tmp_path = raw_file_path.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as raw_file:
             json.dump(records, raw_file, ensure_ascii=False, indent=2)
+        tmp_path.rename(raw_file_path)
 
         log.info(f"Saved raw payload locally: {raw_file_path}")
 
@@ -182,8 +184,10 @@ class APIIngestor:
         metadata_file_path: Path,
         metadata: Dict[str, Any]
     ) -> None:
-        with open(metadata_file_path, "w", encoding="utf-8") as metadata_file:
+        tmp_path = metadata_file_path.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as metadata_file:
             json.dump(metadata, metadata_file, ensure_ascii=False, indent=2)
+        tmp_path.rename(metadata_file_path)
 
         log.info(f"Saved metadata locally: {metadata_file_path}")
 

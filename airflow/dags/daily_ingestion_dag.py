@@ -3,7 +3,8 @@ DAG quotidien d'ingestion vers le Raw Zone (MinIO).
 
 Pipeline :
     start → ensure_buckets → crawl_website → collect_api → collect_files
-          → save_metadata → finish
+          → save_metadata → transform_faculty → transform_courses
+          → register_hudi → index_faculty → index_courses → finish
 
 Toutes les tâches partagent le même Python path (`/opt/airflow/project`)
 monté depuis l'hôte par docker-compose, afin de pouvoir importer
@@ -16,6 +17,7 @@ import sys
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 
@@ -84,6 +86,25 @@ default_args = {
     "retry_delay": timedelta(minutes=2),
 }
 
+SPARK_SUBMIT = """
+set -euo pipefail
+spark-submit \\
+  --master "${{SPARK_MASTER}}" \\
+  --conf spark.driver.host=airflow-worker \\
+  --conf spark.driver.bindAddress=0.0.0.0 \\
+  --conf spark.executor.cores=1 \\
+  --conf spark.executor.memory=1g \\
+  --conf spark.cores.max=2 \\
+  {application}
+""".strip()
+
+SPARK_TASK_ENV = {
+    # L'ingestion partitionne avec la date UTC d'exécution, pas la logical date
+    # Airflow qui peut représenter le début de l'intervalle planifié.
+    "PIPELINE_RUN_DATE": "{{ macros.datetime.utcnow().strftime('%Y-%m-%d') }}",
+    "MINIO_ENDPOINT": "http://minio:9000",
+}
+
 
 with DAG(
     dag_id="daily_ingestion",
@@ -123,9 +144,64 @@ with DAG(
         python_callable=_save_metadata,
     )
 
+    transform_faculty_task = BashOperator(
+        task_id="transform_faculty_profiles",
+        bash_command=SPARK_SUBMIT.format(
+            application="/opt/airflow/project/spark/transform_faculty_profiles.py"
+        ),
+        env=SPARK_TASK_ENV,
+        append_env=True,
+    )
+
+    transform_courses_task = BashOperator(
+        task_id="transform_course_catalog",
+        bash_command=SPARK_SUBMIT.format(
+            application="/opt/airflow/project/spark/transform_course_catalog.py"
+        ),
+        env=SPARK_TASK_ENV,
+        append_env=True,
+    )
+
+    register_hudi_task = BashOperator(
+        task_id="register_hudi_tables",
+        bash_command=SPARK_SUBMIT.format(
+            application="/opt/airflow/project/hive/register_hudi_tables.py"
+        ),
+        env=SPARK_TASK_ENV,
+        append_env=True,
+    )
+
+    index_faculty_task = BashOperator(
+        task_id="index_faculty",
+        bash_command=SPARK_SUBMIT.format(
+            application="/opt/airflow/project/search/index_faculty.py"
+        ),
+        env=SPARK_TASK_ENV,
+        append_env=True,
+    )
+
+    index_courses_task = BashOperator(
+        task_id="index_courses",
+        bash_command=SPARK_SUBMIT.format(
+            application="/opt/airflow/project/search/index_courses.py"
+        ),
+        env=SPARK_TASK_ENV,
+        append_env=True,
+    )
+
     finish = EmptyOperator(task_id="finish")
 
-    start >> ensure_buckets_task
-    ensure_buckets_task >> [crawl_website_task, collect_api_task, collect_files_task]
-    [crawl_website_task, collect_api_task, collect_files_task] >> save_metadata_task
-    save_metadata_task >> finish
+    (
+        start
+        >> ensure_buckets_task
+        >> crawl_website_task
+        >> collect_api_task
+        >> collect_files_task
+        >> save_metadata_task
+        >> transform_faculty_task
+        >> transform_courses_task
+        >> register_hudi_task
+        >> index_faculty_task
+        >> index_courses_task
+        >> finish
+    )

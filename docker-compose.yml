@@ -36,6 +36,7 @@ x-airflow-common: &airflow-common
     CRAWLER_MAX_PAGES: ${CRAWLER_MAX_PAGES}
     CRAWLER_REQUEST_TIMEOUT: ${CRAWLER_REQUEST_TIMEOUT}
     CRAWLER_ENABLE_PLAYWRIGHT: ${CRAWLER_ENABLE_PLAYWRIGHT:-true}
+    SPARK_MASTER: ${SPARK_MASTER}
     PYTHONPATH: /opt/airflow/project:/opt/airflow/project/spark
 
 
@@ -45,6 +46,10 @@ x-airflow-common: &airflow-common
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/config:/opt/airflow/config
     - ./spark:/opt/airflow/project/spark
+    - ./hive:/opt/airflow/project/hive
+    - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar:ro
+    - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar:ro
+    - ./spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:ro
     # On monte le code Python du projet pour que les DAGs puissent importer
     # ingestion/, storage/, utils/, configs/ comme modules.
     - ./ingestion:/opt/airflow/project/ingestion
@@ -234,6 +239,48 @@ services:
       - university-network
     restart: always  
 
+  spark-thriftserver:
+    image: apache/spark:3.5.1
+    container_name: spark-thriftserver
+    depends_on:
+      spark-master:
+        condition: service_started
+      spark-worker:
+        condition: service_started
+      hive-metastore:
+        condition: service_healthy
+    ports:
+      - "10001:10000"
+    volumes:
+      - ./spark:/opt/spark-apps
+      - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+      - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      - ./spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        /opt/spark/sbin/start-thriftserver.sh \
+          --master spark://spark-master:7077 \
+          --conf spark.executor.cores=1 \
+          --conf spark.executor.memory=1g \
+          --conf spark.cores.max=2 \
+          --conf spark.sql.catalogImplementation=hive \
+          --conf spark.hadoop.hive.metastore.uris=thrift://hive-metastore:9083 \
+          --conf spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension \
+          --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
+          --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
+          --conf spark.hadoop.fs.s3a.access.key=${MINIO_ACCESS_KEY} \
+          --conf spark.hadoop.fs.s3a.secret.key=${MINIO_SECRET_KEY} \
+          --conf spark.hadoop.fs.s3a.path.style.access=true \
+          --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+          --hiveconf hive.server2.thrift.port=10000 \
+          --hiveconf hive.server2.thrift.bind.host=0.0.0.0
+        tail -f /opt/spark/logs/*.out
+    networks:
+      - university-network
+    restart: unless-stopped
+
   spark-worker:
     build:
       context: ./spark
@@ -365,6 +412,50 @@ services:
       - university-network
     restart: always
 
+  # ============================================
+  # METABASE — BI Dashboard & Analytics
+  # ============================================
+  metabase:
+    image: metabase/metabase:v0.62.1.x
+    container_name: university-metabase
+    hostname: metabase
+    ports:
+      - "3000:3000"
+    environment:
+      - MB_DB_TYPE=h2
+      - MB_DB_FILE=/metabase-data/metabase.db
+      - MB_JETTY_PORT=3000
+      - MB_JETTY_HOST=0.0.0.0
+      - MB_PASSWORD_COMPLEXITY=weak
+      - MB_PASSWORD_LENGTH=4
+      - MB_ANON_TRACKING_ENABLED=false
+      - MB_CHECK_FOR_UPDATES=false
+      - MB_DB_CONNECTION_TIMEOUT=30000
+      - MB_DB_QUERY_TIMEOUT=120000
+      - MB_DB_ASYNC_QUERY_TIMEOUT=180000
+      - MB_ENABLE_EMBEDDING=false
+      - MB_ENABLE_XRAYS=false
+      - MB_ENABLE_PUBLIC_SHARING=false
+      - MB_SITE_NAME=University Data Platform
+      - MB_SITE_URL=http://localhost:3000
+      - MB_APPLICATION_NAME=University Data Platform
+      - JAVA_OPTS=-Xmx2g -Xms1g
+    volumes:
+      - metabase-data:/metabase-data
+    networks:
+      - university-network
+    depends_on:
+      hive-server:
+        condition: service_healthy
+      hive-metastore:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped      
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: university-elasticsearch
@@ -440,6 +531,7 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  metabase-data:
   elasticsearch-data:
   
 

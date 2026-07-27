@@ -1,4 +1,6 @@
+import os
 import sys
+from datetime import datetime, timezone
 from pyspark.sql import functions as F
 
 sys.path.append("/opt/spark-apps")
@@ -20,9 +22,17 @@ if __name__ == "__main__":
     
     
 
+    run_date = datetime.fromisoformat(
+        os.getenv("PIPELINE_RUN_DATE", datetime.now(timezone.utc).date().isoformat())
+    ).date()
+    partition = f"year={run_date:%Y}/month={run_date:%m}/day={run_date:%d}"
+    courses_path = f"s3a://raw-documents/source=local_files/{partition}/courses.csv"
+
+    print(f"Processing raw partition: {partition}")
+
     # READ CSV FROM MINIO
     df = spark.read.option("header", True).csv(
-    "s3a://raw-documents/source=local_files/year=2026/month=07/day=22/courses.csv"
+        courses_path
     )
 
     # CLEAN
@@ -72,4 +82,3 @@ if __name__ == "__main__":
     df.printSchema()
     df.show()
     spark.stop()
-    

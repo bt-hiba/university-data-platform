@@ -7,10 +7,17 @@ def create_spark_session(app_name="UniversityDataPlatform"):
     minio_endpoint = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
     access_key = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
     secret_key = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+    
+    # Determine driver host: use container name if running in Airflow, else use SPARK_DRIVER_HOST or hostname
+    if os.getenv("AIRFLOW_HOME"):
+        driver_host = "university-airflow-worker"
+    else:
+        driver_host = os.getenv("SPARK_DRIVER_HOST", os.getenv("HOSTNAME", "localhost"))
 
     return SparkSession.builder \
         .appName(app_name) \
         .master(spark_master) \
+        .config("spark.driver.host", driver_host) \
         .config("spark.serializer",
                 "org.apache.spark.serializer.KryoSerializer") \
         .config("spark.sql.extensions",

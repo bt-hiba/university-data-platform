@@ -1,3 +1,7 @@
+import sys
+sys.path.insert(0, '/opt/spark-apps')
+sys.path.insert(0, '/opt/airflow/project')
+
 from spark_session import create_spark_session
 from pyspark.sql.functions import (
     col, lit, current_timestamp, levenshtein, row_number,
@@ -15,6 +19,7 @@ from quality_checks import (
 )
 
 from hudi_writer import write_hudi
+from utils.time_utils import build_minio_date_path
 
 
 
@@ -24,14 +29,21 @@ spark = create_spark_session(
 
 spark.sparkContext.setLogLevel("WARN")
 
-OPENALEX_PATH = "s3a://raw-json/source=openalex/year=2026/month=06/day=18/openalex_publications_20260618T234056Z_63842827966d.json"
-FACULTIES_PATH = "s3a://raw-json/source=local_files/year=2026/month=06/day=20/faculties.json"
+# Use dynamic paths based on today's ingestion date
+date_path_openalex = build_minio_date_path("openalex")
+date_path_files = build_minio_date_path("local_files")
+
+# Construct full S3A paths from raw-json bucket
+OPENALEX_PATH = f"s3a://raw-json/{date_path_openalex}/"
+FACULTIES_PATH = f"s3a://raw-json/{date_path_files}/"
 
 # ----------------------------
 # READ FACULTIES
 # ----------------------------
 print("\n=== LOADING FACULTIES ===")
-faculties_df = spark.read.option("multiline", "true").json(FACULTIES_PATH)
+# Search for .json files in the faculties directory
+faculties_json_path = f"{FACULTIES_PATH}*.json"
+faculties_df = spark.read.option("multiline", "true").json(faculties_json_path)
 print(f"✓ Faculties: {faculties_df.count()} rows")
 faculties_df.show()
 
@@ -45,11 +57,37 @@ faculties_df = faculties_df.withColumn(
 # ----------------------------
 # READ & PARSE OPENALEX (text -> Python JSON)
 # ----------------------------
+from pyspark.sql.functions import input_file_name
+
 print("\n=== LOADING OPENALEX ===")
 
-raw = spark.read.text(OPENALEX_PATH).collect()
-all_text = "".join([row.value for row in raw])
-publications = json.loads(all_text)
+openalex_json_path = f"{OPENALEX_PATH}*.json"
+files_df = spark.read.option("wholetext", "true").text(openalex_json_path) \
+    .withColumn("file_name", input_file_name())
+
+publications = []
+for row in files_df.collect():
+    file_name = row.file_name
+
+    if file_name.endswith("_metadata.json"):
+        continue
+
+    content = row.value.strip()
+    if not content:
+        print(f"⚠ Fichier vide ignoré : {file_name}")
+        continue
+
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError as e:
+        print(f"⚠ Fichier JSON invalide ignoré : {file_name} — {e}")
+        continue
+
+    if not isinstance(parsed, list):
+        print(f"⚠ Fichier ignoré (JSON valide mais pas une liste, type={type(parsed).__name__}) : {file_name}")
+        continue
+
+    publications.extend(parsed)
 
 print(f"Total publications: {len(publications)}")
 

@@ -36,6 +36,7 @@ x-airflow-common: &airflow-common
     CRAWLER_MAX_PAGES: ${CRAWLER_MAX_PAGES}
     CRAWLER_REQUEST_TIMEOUT: ${CRAWLER_REQUEST_TIMEOUT}
     CRAWLER_ENABLE_PLAYWRIGHT: ${CRAWLER_ENABLE_PLAYWRIGHT:-true}
+    SPARK_MASTER: ${SPARK_MASTER}
     PYTHONPATH: /opt/airflow/project:/opt/airflow/project/spark
 
 
@@ -45,6 +46,10 @@ x-airflow-common: &airflow-common
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/config:/opt/airflow/config
     - ./spark:/opt/airflow/project/spark
+    - ./hive:/opt/airflow/project/hive
+    - ./spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar:ro
+    - ./spark/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar:ro
+    - ./spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:/opt/spark/jars/hudi-spark3.5-bundle_2.12-0.15.0.jar:ro
     # On monte le code Python du projet pour que les DAGs puissent importer
     # ingestion/, storage/, utils/, configs/ comme modules.
     - ./ingestion:/opt/airflow/project/ingestion

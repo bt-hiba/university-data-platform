@@ -1,9 +1,111 @@
 course_id,course_name,faculty,program,credits,language,semester
-C001,Database Systems,FSAC,Computer Science,6,FR,S5
-C002,Machine Learning,FSAC,Computer Science,6,EN,S6
-C003,Java Programming,FSAC,Computer Science,5,FR,S4
-C004,Big Data Analytics,FSAC,Big Data & Cloud Computing,6,EN,S5
-C005,Cloud Computing,FSAC,Big Data & Cloud Computing,6,EN,S6
-C006,Artificial Intelligence,FSAC,Computer Science,6,EN,S6
-C007,Operating Systems,FSAC,Computer Science,5,FR,S3
-C008,Computer Networks,FSAC,Computer Science,5,FR,S4
+C001,Database Systems,FSAC,Computer Science,3,FR,S6
+C002,Machine Learning,FSAC,Computer Science,5,FR,S2
+C003,Java Programming,FSAC,Computer Science,4,FR,S6
+C004,Artificial Intelligence,FSAC,Computer Science,3,EN,S1
+C005,Operating Systems,FSAC,Computer Science,3,FR,S2
+C006,Computer Networks,FSAC,Computer Science,4,FR,S5
+C007,Algorithms & Complexity,FSAC,Computer Science,4,EN,S2
+C008,Data Structures,FSAC,Computer Science,6,EN,S1
+C009,Web Development,FSAC,Computer Science,4,EN,S3
+C010,Mobile App Development,FSAC,Computer Science,5,FR,S2
+C011,Compiler Design,FSAC,Computer Science,5,FR,S1
+C012,Distributed Systems,FSAC,Computer Science,6,FR,S3
+C013,Human-Computer Interaction,FSAC,Computer Science,5,EN,S1
+C014,Software Testing,FSAC,Computer Science,6,FR,S4
+C015,Computer Graphics,FSAC,Computer Science,3,EN,S6
+C016,Parallel Computing,FSAC,Computer Science,5,FR,S6
+C017,Big Data Analytics,FSAC,Big Data & Cloud Computing,3,FR,S6
+C018,Cloud Computing,FSAC,Big Data & Cloud Computing,4,EN,S1
+C019,Data Warehousing,FSAC,Big Data & Cloud Computing,4,FR,S4
+C020,Stream Processing,FSAC,Big Data & Cloud Computing,5,EN,S6
+C021,Containerization & Orchestration,FSAC,Big Data & Cloud Computing,5,FR,S3
+C022,NoSQL Databases,FSAC,Big Data & Cloud Computing,5,FR,S6
+C023,Data Engineering Pipelines,FSAC,Big Data & Cloud Computing,5,FR,S5
+C024,Cloud Security,FSAC,Big Data & Cloud Computing,4,FR,S2
+C025,Serverless Architectures,FSAC,Big Data & Cloud Computing,6,EN,S3
+C026,Data Visualization,FSAC,Big Data & Cloud Computing,4,EN,S1
+C027,Linear Algebra,FSAC,Mathematics,4,FR,S3
+C028,Calculus III,FSAC,Mathematics,6,EN,S1
+C029,Probability Theory,FSAC,Mathematics,4,EN,S2
+C030,Numerical Analysis,FSAC,Mathematics,6,EN,S6
+C031,Discrete Mathematics,FSAC,Mathematics,6,FR,S3
+C032,Statistics,FSAC,Mathematics,4,FR,S6
+C033,Optimization Methods,FSAC,Mathematics,5,EN,S5
+C034,Graph Theory,FSAC,Mathematics,6,EN,S2
+C035,Classical Mechanics,FSAC,Physics,4,EN,S1
+C036,Electromagnetism,FSAC,Physics,3,FR,S2
+C037,Quantum Physics,FSAC,Physics,4,EN,S5
+C038,Thermodynamics,FSAC,Physics,3,EN,S4
+C039,Optics,FSAC,Physics,6,EN,S5
+C040,Nuclear Physics,FSAC,Physics,3,FR,S6
+C041,Solid State Physics,FSAC,Physics,5,EN,S1
+C042,Organic Chemistry,FSAC,Chemistry,5,EN,S2
+C043,Inorganic Chemistry,FSAC,Chemistry,6,FR,S6
+C044,Analytical Chemistry,FSAC,Chemistry,5,FR,S5
+C045,Physical Chemistry,FSAC,Chemistry,3,EN,S6
+C046,Biochemistry,FSAC,Chemistry,4,FR,S3
+C047,Polymer Chemistry,FSAC,Chemistry,4,FR,S5
+C048,Cell Biology,FSAC,Biology,5,EN,S1
+C049,Genetics,FSAC,Biology,3,EN,S3
+C050,Microbiology,FSAC,Biology,4,FR,S2
+C051,Molecular Biology,FSAC,Biology,3,FR,S6
+C052,Ecology,FSAC,Biology,6,FR,S5
+C053,Immunology,FSAC,Biology,4,FR,S6
+C054,Network Security,FSAC,Cybersecurity,6,FR,S3
+C055,Cryptography,FSAC,Cybersecurity,6,FR,S5
+C056,Ethical Hacking,FSAC,Cybersecurity,4,EN,S4
+C057,Digital Forensics,FSAC,Cybersecurity,5,EN,S5
+C058,Security Risk Management,FSAC,Cybersecurity,6,FR,S2
+C059,Malware Analysis,FSAC,Cybersecurity,4,FR,S3
+C060,Software Architecture,FSAC,Software Engineering,3,FR,S5
+C061,Agile Methodologies,FSAC,Software Engineering,4,FR,S1
+C062,Requirements Engineering,FSAC,Software Engineering,3,FR,S1
+C063,DevOps Practices,FSAC,Software Engineering,3,EN,S1
+C064,Software Quality Assurance,FSAC,Software Engineering,4,EN,S6
+C065,Design Patterns,FSAC,Software Engineering,6,FR,S5
+C066,Circuit Analysis,FST,Electrical Engineering,4,EN,S2
+C067,Digital Electronics,FST,Electrical Engineering,6,EN,S2
+C068,Power Systems,FST,Electrical Engineering,3,FR,S6
+C069,Control Systems,FST,Electrical Engineering,6,EN,S4
+C070,Signal Processing,FST,Electrical Engineering,6,EN,S6
+C071,Microelectronics,FST,Electrical Engineering,3,FR,S1
+C072,Fluid Mechanics,FST,Mechanical Engineering,6,EN,S1
+C073,Thermodynamics for Engineers,FST,Mechanical Engineering,4,FR,S2
+C074,Machine Design,FST,Mechanical Engineering,6,FR,S4
+C075,Manufacturing Processes,FST,Mechanical Engineering,4,EN,S4
+C076,Heat Transfer,FST,Mechanical Engineering,4,FR,S4
+C077,Mechanical Vibrations,FST,Mechanical Engineering,3,FR,S6
+C078,Structural Analysis,FST,Civil Engineering,3,FR,S2
+C079,Geotechnical Engineering,FST,Civil Engineering,4,EN,S4
+C080,Construction Materials,FST,Civil Engineering,6,FR,S4
+C081,Hydraulics,FST,Civil Engineering,3,FR,S4
+C082,Transportation Engineering,FST,Civil Engineering,3,EN,S3
+C083,Reinforced Concrete Design,FST,Civil Engineering,6,EN,S4
+C084,Operations Research,FST,Industrial Engineering,6,FR,S2
+C085,Supply Chain Management,FST,Industrial Engineering,5,FR,S1
+C086,Quality Control,FST,Industrial Engineering,3,EN,S1
+C087,Production Planning,FST,Industrial Engineering,3,EN,S5
+C088,Ergonomics,FST,Industrial Engineering,4,FR,S5
+C089,Lean Manufacturing,FST,Industrial Engineering,3,FR,S1
+C090,Wireless Communications,FST,Telecommunications,3,FR,S4
+C091,Fiber Optics,FST,Telecommunications,3,FR,S5
+C092,Antenna Theory,FST,Telecommunications,3,FR,S4
+C093,Mobile Networks,FST,Telecommunications,5,EN,S2
+C094,Satellite Communications,FST,Telecommunications,5,FR,S3
+C095,Digital Signal Transmission,FST,Telecommunications,6,FR,S6
+C096,Solar Energy Systems,FST,Renewable Energy,5,EN,S3
+C097,Wind Energy Technology,FST,Renewable Energy,3,FR,S4
+C098,Energy Storage Systems,FST,Renewable Energy,3,FR,S5
+C099,Smart Grids,FST,Renewable Energy,4,EN,S2
+C100,Sustainable Energy Policy,FST,Renewable Energy,5,FR,S2
+C101,Robot Kinematics,FST,Robotics,5,EN,S2
+C102,Sensors & Actuators,FST,Robotics,6,EN,S5
+C103,Embedded Systems,FST,Robotics,3,EN,S6
+C104,Computer Vision for Robotics,FST,Robotics,3,FR,S3
+C105,Autonomous Systems,FST,Robotics,3,FR,S6
+C106,Materials Characterization,FST,Materials Science,4,EN,S3
+C107,Metallurgy,FST,Materials Science,4,EN,S2
+C108,Composite Materials,FST,Materials Science,5,EN,S3
+C109,Nanomaterials,FST,Materials Science,3,FR,S6
+C110,Corrosion Science,FST,Materials Science,6,EN,S1

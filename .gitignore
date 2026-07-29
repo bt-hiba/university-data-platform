@@ -22,3 +22,6 @@ Thumbs.db
 # transform
 #/spark/transform_course_catalog.py
 #/spark/transform_faculty_profiles.py
+
+ingestion/files/sample_data/courses.csv
+ingestion/files/sample_data/faculties.json

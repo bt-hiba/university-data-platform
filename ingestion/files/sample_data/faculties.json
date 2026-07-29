@@ -8,5 +8,395 @@
     "faculty_id": 2,
     "faculty_name": "FST",
     "city": "Mohammedia"
+  },
+  {
+    "faculty_id": 3,
+    "faculty_name": "FSR",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 4,
+    "faculty_name": "FSM",
+    "city": "Marrakech"
+  },
+  {
+    "faculty_id": 5,
+    "faculty_name": "FSF",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 6,
+    "faculty_name": "FSO",
+    "city": "Oujda"
+  },
+  {
+    "faculty_id": 7,
+    "faculty_name": "FST Fes",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 8,
+    "faculty_name": "FST Tanger",
+    "city": "Tanger"
+  },
+  {
+    "faculty_id": 9,
+    "faculty_name": "FST Settat",
+    "city": "Settat"
+  },
+  {
+    "faculty_id": 10,
+    "faculty_name": "FST Beni Mellal",
+    "city": "Beni Mellal"
+  },
+  {
+    "faculty_id": 11,
+    "faculty_name": "FSJES Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 12,
+    "faculty_name": "FSJES Ain Sebaa",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 13,
+    "faculty_name": "FSJES Rabat-Agdal",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 14,
+    "faculty_name": "FSJES Souissi",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 15,
+    "faculty_name": "FSJES Marrakech",
+    "city": "Marrakech"
+  },
+  {
+    "faculty_id": 16,
+    "faculty_name": "FSJES Fes",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 17,
+    "faculty_name": "FSJES Oujda",
+    "city": "Oujda"
+  },
+  {
+    "faculty_id": 18,
+    "faculty_name": "FSJES Tanger",
+    "city": "Tanger"
+  },
+  {
+    "faculty_id": 19,
+    "faculty_name": "FSJES Agadir",
+    "city": "Agadir"
+  },
+  {
+    "faculty_id": 20,
+    "faculty_name": "FSJES Meknes",
+    "city": "Meknes"
+  },
+  {
+    "faculty_id": 21,
+    "faculty_name": "FLSH Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 22,
+    "faculty_name": "FLSH Ben M'sik",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 23,
+    "faculty_name": "FLSH Rabat",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 24,
+    "faculty_name": "FLSH Marrakech",
+    "city": "Marrakech"
+  },
+  {
+    "faculty_id": 25,
+    "faculty_name": "FLSH Fes-Saiss",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 26,
+    "faculty_name": "FLSH Dhar El Mahraz",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 27,
+    "faculty_name": "FLSH Oujda",
+    "city": "Oujda"
+  },
+  {
+    "faculty_id": 28,
+    "faculty_name": "FLSH Agadir",
+    "city": "Agadir"
+  },
+  {
+    "faculty_id": 29,
+    "faculty_name": "FLSH Meknes",
+    "city": "Meknes"
+  },
+  {
+    "faculty_id": 30,
+    "faculty_name": "FLSH Kenitra",
+    "city": "Kenitra"
+  },
+  {
+    "faculty_id": 31,
+    "faculty_name": "FMP Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 32,
+    "faculty_name": "FMP Rabat",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 33,
+    "faculty_name": "FMP Marrakech",
+    "city": "Marrakech"
+  },
+  {
+    "faculty_id": 34,
+    "faculty_name": "FMP Fes",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 35,
+    "faculty_name": "FMP Oujda",
+    "city": "Oujda"
+  },
+  {
+    "faculty_id": 36,
+    "faculty_name": "FMP Agadir",
+    "city": "Agadir"
+  },
+  {
+    "faculty_id": 37,
+    "faculty_name": "FMP Tanger",
+    "city": "Tanger"
+  },
+  {
+    "faculty_id": 38,
+    "faculty_name": "ENSA Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 39,
+    "faculty_name": "ENSA Marrakech",
+    "city": "Marrakech"
+  },
+  {
+    "faculty_id": 40,
+    "faculty_name": "ENSA Fes",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 41,
+    "faculty_name": "ENSA Tanger",
+    "city": "Tanger"
+  },
+  {
+    "faculty_id": 42,
+    "faculty_name": "ENSA Kenitra",
+    "city": "Kenitra"
+  },
+  {
+    "faculty_id": 43,
+    "faculty_name": "ENSA Oujda",
+    "city": "Oujda"
+  },
+  {
+    "faculty_id": 44,
+    "faculty_name": "ENSA Agadir",
+    "city": "Agadir"
+  },
+  {
+    "faculty_id": 45,
+    "faculty_name": "ENSA Safi",
+    "city": "Safi"
+  },
+  {
+    "faculty_id": 46,
+    "faculty_name": "ENSA Khouribga",
+    "city": "Khouribga"
+  },
+  {
+    "faculty_id": 47,
+    "faculty_name": "ENSA Berrechid",
+    "city": "Berrechid"
+  },
+  {
+    "faculty_id": 48,
+    "faculty_name": "ENSAM Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 49,
+    "faculty_name": "ENSAM Meknes",
+    "city": "Meknes"
+  },
+  {
+    "faculty_id": 50,
+    "faculty_name": "ENSAM Rabat",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 51,
+    "faculty_name": "EST Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 52,
+    "faculty_name": "EST Salé",
+    "city": "Sale"
+  },
+  {
+    "faculty_id": 53,
+    "faculty_name": "EST Fes",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 54,
+    "faculty_name": "EST Meknes",
+    "city": "Meknes"
+  },
+  {
+    "faculty_id": 55,
+    "faculty_name": "EST Oujda",
+    "city": "Oujda"
+  },
+  {
+    "faculty_id": 56,
+    "faculty_name": "EST Agadir",
+    "city": "Agadir"
+  },
+  {
+    "faculty_id": 57,
+    "faculty_name": "EST Safi",
+    "city": "Safi"
+  },
+  {
+    "faculty_id": 58,
+    "faculty_name": "EST Essaouira",
+    "city": "Essaouira"
+  },
+  {
+    "faculty_id": 59,
+    "faculty_name": "EST Guelmim",
+    "city": "Guelmim"
+  },
+  {
+    "faculty_id": 60,
+    "faculty_name": "EST Khenifra",
+    "city": "Khenifra"
+  },
+  {
+    "faculty_id": 61,
+    "faculty_name": "EMI Rabat",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 62,
+    "faculty_name": "EHTP Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 63,
+    "faculty_name": "INPT Rabat",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 64,
+    "faculty_name": "ENSIAS Rabat",
+    "city": "Rabat"
+  },
+  {
+    "faculty_id": 65,
+    "faculty_name": "ISCAE Casablanca",
+    "city": "Casablanca"
+  },
+  {
+    "faculty_id": 66,
+    "faculty_name": "FPD Khouribga",
+    "city": "Khouribga"
+  },
+  {
+    "faculty_id": 67,
+    "faculty_name": "FPL Larache",
+    "city": "Larache"
+  },
+  {
+    "faculty_id": 68,
+    "faculty_name": "FP Nador",
+    "city": "Nador"
+  },
+  {
+    "faculty_id": 69,
+    "faculty_name": "FP Errachidia",
+    "city": "Errachidia"
+  },
+  {
+    "faculty_id": 70,
+    "faculty_name": "FP Ouarzazate",
+    "city": "Ouarzazate"
+  },
+  {
+    "faculty_id": 71,
+    "faculty_name": "FP Taroudant",
+    "city": "Taroudant"
+  },
+  {
+    "faculty_id": 72,
+    "faculty_name": "FP Al Hoceima",
+    "city": "Al Hoceima"
+  },
+  {
+    "faculty_id": 73,
+    "faculty_name": "FP Sidi Bennour",
+    "city": "Sidi Bennour"
+  },
+  {
+    "faculty_id": 74,
+    "faculty_name": "FP Taza",
+    "city": "Taza"
+  },
+  {
+    "faculty_id": 75,
+    "faculty_name": "FP Khemisset",
+    "city": "Khemisset"
+  },
+  {
+    "faculty_id": 76,
+    "faculty_name": "FSDM Fes",
+    "city": "Fes"
+  },
+  {
+    "faculty_id": 77,
+    "faculty_name": "FSK Kenitra",
+    "city": "Kenitra"
+  },
+  {
+    "faculty_id": 78,
+    "faculty_name": "FSJ El Jadida",
+    "city": "El Jadida"
+  },
+  {
+    "faculty_id": 79,
+    "faculty_name": "FSAgadir",
+    "city": "Agadir"
+  },
+  {
+    "faculty_id": 80,
+    "faculty_name": "FSTG Marrakech",
+    "city": "Marrakech"
   }
 ]

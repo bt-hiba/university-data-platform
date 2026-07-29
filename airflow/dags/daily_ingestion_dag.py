@@ -191,17 +191,26 @@ with DAG(
 
     finish = EmptyOperator(task_id="finish")
 
-    (
-        start
-        >> ensure_buckets_task
-        >> crawl_website_task
-        >> collect_api_task
-        >> collect_files_task
-        >> save_metadata_task
-        >> transform_faculty_task
-        >> transform_courses_task
-        >> register_hudi_task
-        >> index_faculty_task
-        >> index_courses_task
-        >> finish
-    )
+
+
+
+    start >> ensure_buckets_task
+
+    # Ingestion (web / API / fichiers) en parallèle
+    ensure_buckets_task >> [crawl_website_task, collect_api_task, collect_files_task]
+
+    # save_metadata a besoin des XCom des 3 tâches ci-dessus : il doit donc
+    # attendre qu'elles soient TOUTES terminées avant de s'exécuter
+    [crawl_website_task, collect_api_task, collect_files_task] >> save_metadata_task
+
+    # Transformations Spark en parallèle
+    save_metadata_task >> [transform_faculty_task, transform_courses_task]
+
+    # register_hudi attend que les 2 transformations soient terminées
+    [transform_faculty_task, transform_courses_task] >> register_hudi_task
+
+    # Indexation en parallèle
+    register_hudi_task >> [index_faculty_task, index_courses_task]
+
+    # finish attend les 2 indexations
+    [index_faculty_task, index_courses_task] >> finish

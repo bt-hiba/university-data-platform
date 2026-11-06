@@ -24,7 +24,7 @@ Airflow : orchestration du DAG `daily_ingestion`
 MinIO : zone brute (Raw Zone)
              │
              ▼
-Spark + Hudi : transformations et tables curées
+Spark + Hudi : transformations parallèles
              │
              ▼
 Hive : métastore et requêtes SQL
@@ -42,6 +42,7 @@ FastAPI : API de recherche
 - Collecte web récursive avec prise en charge des sites dynamiques.
 - Collecte de publications académiques depuis OpenAlex.
 - Ingestion de fichiers CSV, JSON et PDF.
+- Exécution parallèle des tâches indépendantes d'ingestion, de transformation Spark et d'indexation Elasticsearch.
 - Stockage brut dans MinIO, avec partitionnement par source et par date.
 - Métadonnées, journaux et empreintes SHA-256 pour la traçabilité.
 - Transformations distribuées avec Spark et écriture de tables Apache Hudi.
@@ -155,20 +156,38 @@ docker compose up -d postgres redis minio airflow-webserver airflow-scheduler ai
 Le DAG `daily_ingestion` est planifié quotidiennement et peut aussi être
 déclenché manuellement depuis l'interface Airflow.
 
+Il utilise une stratégie d'exécution hybride parallèle : les tâches
+indépendantes sont exécutées simultanément, tandis que les dépendances entre
+les différentes étapes sont conservées.
+
 ```text
-start
-  → ensure_buckets
-  → crawl_website
-  → collect_api
-  → collect_files
-  → save_metadata
-  → transform_faculty_profiles
-  → transform_course_catalog
-  → register_hudi_tables
-  → index_faculty
-  → index_courses
-  → finish
-```
+                         start
+                           |
+                     ensure_buckets
+                           |
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+       crawl_website  collect_api  collect_files
+             │             │             │
+             └─────────────┼─────────────┘
+                           |
+                     save_metadata
+                           |
+                ┌──────────┴──────────┐
+                ▼                     ▼
+       transform_faculty       transform_courses
+                │                     │
+                └──────────┬──────────┘
+                           |
+                  register_hudi_tables
+                           |
+                ┌──────────┴──────────┐
+                ▼                     ▼
+           index_faculty        index_courses
+                │                     │
+                └──────────┬──────────┘
+                           |
+                         finish
 
 Déclenchement en ligne de commande :
 
@@ -332,6 +351,11 @@ docker compose up -d airflow-webserver airflow-scheduler airflow-worker
 La plateforme dispose d'une chaîne complète allant de l'ingestion brute à la
 recherche et à la visualisation : Airflow, MinIO, Spark, Hudi, Hive,
 Elasticsearch, FastAPI et Metabase sont intégrés dans Docker Compose.
+
+Le DAG `daily_ingestion` utilise désormais une stratégie d'exécution hybride
+parallèle, permettant l'exécution simultanée des tâches indépendantes
+d'ingestion, de transformation et d'indexation, tout en respectant les
+dépendances entre les différentes étapes du pipeline.
 
 Les améliorations possibles concernent notamment l'ajout de règles de qualité
 de données, la surveillance des pipelines, l'authentification des interfaces
